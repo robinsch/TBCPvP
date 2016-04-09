@@ -1519,8 +1519,6 @@ void World::SetInitialWorldSettings()
     m_timers[WUPDATE_CLEANDB].SetInterval(m_configs[CONFIG_LOGDB_CLEARINTERVAL]*MINUTE*IN_MILLISECONDS);
                                                             // clean logs table every 14 days by default
 
-    m_timers[WUPDATE_DELETECHARS].SetInterval(5 * MINUTE * IN_MILLISECONDS); // check for chars to delete every 5 minutes
-
     //to set mailtimer to return mails every day between 4 and 5 am
     //mailtimer is increased when updating auctions
     //one second is 1000 -(tested on win system)
@@ -1580,9 +1578,6 @@ void World::SetInitialWorldSettings()
     }
     else
         sLog->SetLogDB(false);
-
-    // Delete all characters which have been deleted X days before
-    Player::DeleteOldCharacters();
 
     sLog->outString("WORLD: World initialized");
 }
@@ -1818,13 +1813,6 @@ void World::Update(time_t diff)
 
     sOutdoorPvPMgr->Update(diff);
     RecordTimeDiff("UpdateOutdoorPvPMgr");
-
-    ///- Delete all characters which have been deleted X days before
-    if (m_timers[WUPDATE_DELETECHARS].Passed())
-    {
-        m_timers[WUPDATE_DELETECHARS].Reset();
-        Player::DeleteOldCharacters();
-    }
 
     // execute callbacks from sql queries that were queued recently
     UpdateResultQueue();

@@ -4665,8 +4665,6 @@ void Player::DeleteFromDB(uint64 playerguid, uint32 accountId, bool updateRealmC
             CharacterDatabase.PExecute("DELETE FROM mail WHERE receiver = '%u'", guid);
             CharacterDatabase.PExecute("DELETE FROM mail_items WHERE receiver = '%u'", guid);
             CharacterDatabase.PExecute("DELETE FROM mail_external WHERE receiver = '%u'", guid);
-
-            CharacterDatabase.PExecute("UPDATE characters SET deleteInfos_Name=name, deleteInfos_Account=account, deleteDate='" UI64FMTD "', name='', account=0 WHERE guid=%u", uint64(time(NULL)), guid);
             break;
         }
         default:
@@ -4675,44 +4673,6 @@ void Player::DeleteFromDB(uint64 playerguid, uint32 accountId, bool updateRealmC
 
     if (updateRealmChars)
         sWorld->UpdateRealmCharCount(accountId);
-}
-
-/**
- * Characters which were kept back in the database after being deleted and are now too old (see config option "CharDelete.KeepDays"), will be completely deleted.
- *
- * @see Player::DeleteFromDB
- */
-void Player::DeleteOldCharacters()
-{
-    uint32 keepDays = sWorld->getConfig(CONFIG_CHARDELETE_KEEP_DAYS);
-    if (!keepDays)
-        return;
-
-    Player::DeleteOldCharacters(keepDays);
-}
-
-/**
- * Characters which were kept back in the database after being deleted and are older than the specified amount of days, will be completely deleted.
- *
- * @see Player::DeleteFromDB
- *
- * @param keepDays overrite the config option by another amount of days
- */
-void Player::DeleteOldCharacters(uint32 keepDays)
-{
-    sLog->outString("Player::DeleteOldChars: Deleting all characters which have been deleted %u days before...", keepDays);
-
-    QueryResult_AutoPtr resultChars = CharacterDatabase.PQuery("SELECT guid, deleteInfos_Account FROM characters WHERE deleteDate IS NOT NULL AND deleteDate < %u", uint64(time(NULL) - time_t(keepDays * DAY)));
-    if (resultChars)
-    {
-        sLog->outString("Player::DeleteOldChars: Found %u character(s) to delete", resultChars->GetRowCount());
-        do
-        {
-            Field *charFields = resultChars->Fetch();
-            Player::DeleteFromDB(charFields[0].GetUInt64(), charFields[1].GetUInt32(), true, true);
-        }
-        while(resultChars->NextRow());
-    }
 }
 
 void Player::SetMovement(PlayerMovementType pType)
@@ -15613,8 +15573,8 @@ bool Player::LoadFromDB(uint32 guid, SqlQueryHolder *holder)
     //"resettalents_time, trans_x, trans_y, trans_z, trans_o, transguid, extra_flags, stable_slots, at_login, zone, online, death_expire_time, taxi_path, dungeon_difficulty, "
     // 40           41                42                43                    44          45          46              47           48               49              50
     //"arenaPoints, totalHonorPoints, todayHonorPoints, yesterdayHonorPoints, totalKills, todayKills, yesterdayKills, chosenTitle, knownCurrencies, watchedFaction, drunk, "
-    // 51      52         53         54          55           56             57           58         59          60                 61
-    //"health, powerMana, powerRage, powerFocus, powerEnergy, powerHapiness, instance_id, specCount, activeSpec, activeCustomTitle, knownCustomTitle FROM characters WHERE guid = '%u'", guid);
+    // 51      52         53         54          55           56             57           58         59
+    //"health, powerMana, powerRage, powerFocus, powerEnergy, powerHapiness, instance_id, specCount, activeSpec, FROM characters WHERE guid = '%u'", guid);
     QueryResult_AutoPtr result = holder->GetResult(PLAYER_LOGIN_QUERY_LOADFROM);
 
     if (!result)
@@ -17364,7 +17324,7 @@ void Player::SaveToDB()
         "trans_x, trans_y, trans_z, trans_o, transguid, extra_flags, stable_slots, at_login, zone, "
         "death_expire_time, taxi_path, arenaPoints, totalHonorPoints, todayHonorPoints, yesterdayHonorPoints, "
         "totalKills, todayKills, yesterdayKills, chosenTitle, watchedFaction, drunk, health, "
-        "powerMana, powerRage, powerFocus, powerEnergy, powerHappiness, latency, specCount, activeSpec, activeCustomTitle, knownCustomTitle) VALUES ("
+        "powerMana, powerRage, powerFocus, powerEnergy, powerHappiness, latency, specCount, activeSpec) VALUES ("
         << GetGUIDLow() << ", "
         << GetSession()->GetAccountId() << ", '"
         << sql_name << "', "
@@ -17476,10 +17436,6 @@ void Player::SaveToDB()
     ss << uint32(m_specsCount);
     ss << ", ";
     ss << uint32(m_activeSpec);
-    ss << ", ";
-    ss << m_customTitleActive;
-    ss << ", ";
-    ss << m_customTitleKnown;
     ss << ")";
 
     CharacterDatabase.BeginTransaction();
