@@ -1,2 +1,0 @@
-INSERT INTO `spell_linked_spell` (`spell_trigger`, `spell_effect`, `comment`) VALUES ('23214', '31726', 'Summon Charger');
-INSERT INTO `spell_linked_spell` (`spell_trigger`, `spell_effect`, `comment`) VALUES ('13819', '31726', 'Summon Warhorse');

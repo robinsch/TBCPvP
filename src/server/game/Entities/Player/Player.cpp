@@ -16144,9 +16144,6 @@ bool Player::LoadFromDB(uint32 guid, SqlQueryHolder *holder)
         }
     }
 
-    m_customTitleActive = fields[59].GetUInt32();
-    m_customTitleKnown  = fields[60].GetUInt32();
-
     _LoadDeclinedNames(holder->GetResult(PLAYER_LOGIN_QUERY_LOADDECLINEDNAMES));
 
     return true;

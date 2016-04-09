@@ -1,1 +1,0 @@
-UPDATE `gameobject_template` SET `ScriptName`='go_forged_illidari_bane' WHERE (`entry`='185032');

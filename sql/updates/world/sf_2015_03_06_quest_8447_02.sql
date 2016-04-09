@@ -1,1 +1,0 @@
-UPDATE `quest_template` SET `RewRepFaction1`='609', `RewRepValue1`='500', `RewMoneyMaxLevel`='6000' WHERE (`entry`='8447');

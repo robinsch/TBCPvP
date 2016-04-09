@@ -149,8 +149,6 @@ class ArenaTeam
         uint32 GetBorderColor() const     { return m_BorderColor; }
         uint32 GetBackgroundColor() const { return m_BackgroundColor; }
 
-        bool IsQualified() const          { return m_Qualified; }
-
         void SetCaptain(const uint64& guid);
         bool AddMember(const uint64& playerGuid);
         void DelMember(uint64 guid);
@@ -218,9 +216,6 @@ class ArenaTeam
         void FinishSeason();
         void FinishGame(int32 mod);
 
-        void QualifyTeam(bool qualified, uint8 msg_id = 0);
-        bool HasEnoughQualifiedMembers();
-
     protected:
 
         uint32 m_TeamId;
@@ -233,8 +228,6 @@ class ArenaTeam
         uint32 m_EmblemColor;     // ARGB format
         uint32 m_BorderStyle;     // border image id
         uint32 m_BorderColor;     // ARGB format
-
-        bool m_Qualified;
 
         MemberList m_members;
         ArenaTeamStats m_stats;

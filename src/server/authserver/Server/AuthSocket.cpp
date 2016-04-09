@@ -372,8 +372,6 @@ bool AuthSocket::_HandleLogonChallenge()
             "FROM account a "
             "LEFT JOIN account_access aa "
             "ON (a.id = aa.id) "
-            "LEFT JOIN tournament_access ta "
-            "ON (a.id = ta.id) "
             "WHERE a.username = '%s'", _login.c_str());
 
         if (result)
@@ -722,7 +720,7 @@ bool AuthSocket::_HandleReconnectChallenge()
 
     _login = (const char*)ch->I;
 
-    QueryResult_AutoPtr result = LoginDatabase.PQuery("SELECT a.sessionkey, a.id, aa.gmlevel, ta.id  FROM account a LEFT JOIN account_access aa ON (a.id = aa.id) LEFT JOIN tournament_access ta ON (a.id = ta.id) WHERE username = '%s'", _login.c_str());
+    QueryResult_AutoPtr result = LoginDatabase.PQuery("SELECT a.sessionkey, a.id, aa.gmlevel, ta.id  FROM account a LEFT JOIN account_access aa ON (a.id = aa.id) WHERE username = '%s'", _login.c_str());
 
     // Stop if the account is not found
     if (!result)

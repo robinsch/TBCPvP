@@ -1,2 +1,0 @@
-ALTER TABLE `arena_team`
-	ADD COLUMN `qualified` TINYINT(3) UNSIGNED NULL DEFAULT '0' AFTER `BorderColor`;

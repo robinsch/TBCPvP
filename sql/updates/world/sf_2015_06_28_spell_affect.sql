@@ -1,1 +1,0 @@
-UPDATE `spell_affect` SET `SpellFamilyMask`='137455731301' WHERE (`entry`='16886') AND (`effectId`='0');
