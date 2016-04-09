@@ -2602,6 +2602,12 @@ void SpellMgr::LoadSpellCustomAttr()
             spellInfo->speed = 0;
             spellInfo->AttributesEx3 |= SPELL_ATTR_EX3_NO_INITIAL_AGGRO;
             break;
+        case 14156: // Ruthlessness
+        case 14157:
+        case 14160:
+        case 14161:
+            spellInfo->AttributesEx3 |= SPELL_ATTR_EX3_NO_INITIAL_AGGRO;
+            break;
         case 29200: // Purify Helboar Meat
             spellInfo->EffectImplicitTargetA[0] = TARGET_UNIT_CASTER;
             break;
