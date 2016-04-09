@@ -8665,7 +8665,7 @@ uint32 Unit::SpellHealingBonus(SpellEntry const *spellProto, uint32 healamount, 
     for (AuraList::const_iterator i = mHealingDonePct.begin();i != mHealingDonePct.end(); ++i)
         heal *= (100.0f + (*i)->GetModifierValue()) / 100.0f;
 
-    // SPELLMOD_DOT will be applied in 
+    // SPELLMOD_DOT will be applied in AuraEffect::HandlePeriodicDamageAurasTick.
     if (damagetype != DOT)
     {
         // apply spellmod to Done amount
