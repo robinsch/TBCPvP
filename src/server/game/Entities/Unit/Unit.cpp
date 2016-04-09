@@ -2221,7 +2221,7 @@ bool Unit::CalcBinaryResist(Unit *pVictim, SpellSchoolMask schoolMask)
     return false;
 }
 
-void Unit::AttackerStateUpdate (Unit *pVictim, WeaponAttackType attType, bool extra)
+void Unit::AttackerStateUpdate(Unit *pVictim, WeaponAttackType attType, bool extra)
 {
     if (!extra && hasUnitState(UNIT_STAT_CANNOT_AUTOATTACK) || HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED))
         return;
