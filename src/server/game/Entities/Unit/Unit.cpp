@@ -9156,7 +9156,7 @@ void Unit::Mount(uint32 mount)
                     ToPlayer()->SetTemporaryUnsummonedPetNumber(pet->GetCharmInfo()->GetPetNumber());
                     ToPlayer()->SetOldPetSpell(pet->GetUInt32Value(UNIT_CREATED_BY_SPELL));
                 }
-                ToPlayer()->RemovePet(NULL, PET_SAVE_NOT_IN_SLOT);
+                ToPlayer()->RemovePet(NULL, PET_SAVE_AS_CURRENT);
                 return;
             }
         }
