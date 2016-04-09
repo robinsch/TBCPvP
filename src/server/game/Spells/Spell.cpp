@@ -2353,11 +2353,8 @@ void Spell::cancel()
     {
         case SPELL_STATE_PREPARING:
         {
-            /*if (m_caster->GetTypeId() == TYPEID_PLAYER)
-            {
-                if ((m_caster->GetCurrentSpell(CURRENT_GENERIC_SPELL) == this) && m_spellInfo->StartRecoveryTime)
-                    m_caster->ToPlayer()->RemoveGlobalCooldown(m_spellInfo);
-            }*/
+            if (m_caster->GetTypeId() == TYPEID_PLAYER)
+                m_caster->ToPlayer()->RemoveGlobalCooldown(m_spellInfo);
         }
         case SPELL_STATE_DELAYED:
         {
@@ -3746,7 +3743,7 @@ void Spell::TriggerSpell()
 uint8 Spell::CanCast(bool strict)
 {
     // check cooldowns to prevent cheating
-    if (!m_IsTriggeredSpell && m_caster->GetTypeId() == TYPEID_PLAYER && (m_caster->ToPlayer()->HasSpellCooldown(m_spellInfo->Id)))
+    if (!m_IsTriggeredSpell && m_caster->GetTypeId() == TYPEID_PLAYER && (m_caster->ToPlayer()->HasSpellCooldown(m_spellInfo->Id) || m_caster->ToPlayer()->HasGlobalCooldown(m_spellInfo)))
         return SPELL_FAILED_NOT_READY;
 
     if (m_caster->isInCombat() && IsNonCombatSpell(m_spellInfo))
