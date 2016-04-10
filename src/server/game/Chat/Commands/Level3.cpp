@@ -3589,7 +3589,7 @@ bool ChatHandler::HandleDamageCommand(const char * args)
     if (!spellid || !sSpellStore.LookupEntry(spellid))
         return false;
 
-    m_session->GetPlayer()->SpellNonMeleeDamageLog(target, spellid, damage, false);
+    m_session->GetPlayer()->SpellNonMeleeDamageLog(target, spellid, damage);
     return true;
 }
 

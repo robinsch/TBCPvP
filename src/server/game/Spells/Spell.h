@@ -255,7 +255,7 @@ class Spell
         void EffectUnused(uint32);
         void EffectDistract(uint32 i);
         void EffectPull(uint32 i);
-        void EffectSchoolDMG(uint32 i);
+        void EffectSchoolDamage(uint32 i);
         void EffectEnvironmentalDMG(uint32 i);
         void EffectInstaKill(uint32 i);
         void EffectDummy(uint32 i);
@@ -378,7 +378,7 @@ class Spell
         uint8 CheckPower();
         uint8 CheckCasterAuras() const;
 
-        int32 CalculateDamage(uint8 i, Unit* target) { return m_caster->CalculateSpellDamage(m_spellInfo, i, m_currentBasePoints[i], target); }
+        int32 CalculateDamage(uint8 i, Unit* target) { return m_caster->CalculateSpellDamage(target, m_spellInfo, i, m_currentBasePoints[i]); }
 
         bool HaveTargetsForEffect(uint8 effect) const;
         void Delayed();
@@ -535,19 +535,16 @@ class Spell
         // Spell target subsystem
         //*****************************************
         // Targets store structures and data
-        uint32 m_countOfHit;
-        uint32 m_countOfMiss;
         struct TargetInfo
         {
             uint64 targetGUID;
             uint64 timeDelay;
-            SpellMissInfo missCondition:8;
-            SpellMissInfo reflectResult:8;
-            uint8  effectMask:8;
-            bool   processed:1;
-            bool   deleted:1;
-            int32  damage;
-            bool   crit;
+            uint32 HitInfo;
+            uint32 damage;
+            SpellMissInfo missCondition: 8;
+            SpellMissInfo reflectResult: 8;
+            uint8  effectMask: 8;
+            bool   processed: 1;
         };
         std::list<TargetInfo> m_UniqueTargetInfo;
         uint8 m_needAliveTargetMask;                        // Mask req. alive targets
@@ -586,11 +583,6 @@ class Spell
         bool IsValidSingleTargetEffect(Unit const* target, Targets type) const;
         bool IsValidSingleTargetSpell(Unit const* target) const;
         bool CanTargetNotInLOS(SpellEntry const *spellInfo, uint32 eff);
-        void CalculateDamageDoneForAllTargets();
-        int32 CalculateDamageDone(Unit *unit, const uint32 effectMask, float *multiplier);
-        void SpellDamageSchoolDmg(uint32 i);
-        void SpellDamageWeaponDmg(uint32 i);
-        void SpellDamageHeal(uint32 i);
 
         void GetTotemPosition(uint32 i, Position &pos);
         void GetSummonPosition(uint32 i, Position &pos, float radius = 0.0f, uint32 count = 0);
