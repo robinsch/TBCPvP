@@ -8552,8 +8552,6 @@ uint32 Unit::MeleeDamageBonusDone(Unit* pVictim, uint32 pdamage, WeaponAttackTyp
     DoneFlat += GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_DAMAGE_DONE_CREATURE, creatureTypeMask);
 
     // ..done flat (base at attack power for marked target and base at attack power for creature type)
-    if (GetTypeId() == TYPEID_PLAYER)
-        sLog->outError("attType: %u", attType);
     if (attType == RANGED_ATTACK)
     {
         APbonus += pVictim->GetTotalAuraModifier(SPELL_AURA_RANGED_ATTACK_POWER_ATTACKER_BONUS);
@@ -9506,7 +9504,7 @@ void Unit::UpdateSpeed(UnitMoveType mtype, bool forced, float ratio)
         case MOVE_FLIGHT:
         {
             // Set creature speed rate
-            if (GetTypeId() == TYPEID_UNIT)
+            /*if (GetTypeId() == TYPEID_UNIT)
             {
                 Unit* pOwner = GetCharmerOrOwner();
                 if (ToCreature()->isPet() && pOwner && (!isInCombat() && !pOwner->isInCombat())) // Must check for owner or crash on "Tame Beast"
@@ -9525,7 +9523,7 @@ void Unit::UpdateSpeed(UnitMoveType mtype, bool forced, float ratio)
                 }
                 else
                     speed *= ToCreature()->GetCreatureTemplate()->speed;    // at this point, MOVE_WALK is never reached
-            }
+            }*/
 
             // Normalize speed by 191 aura SPELL_AURA_USE_NORMAL_MOVEMENT_SPEED if need
             // TODO: possible affect only on MOVE_RUN
