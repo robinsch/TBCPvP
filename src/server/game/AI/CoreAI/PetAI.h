@@ -45,6 +45,8 @@ class PetAI : public CreatureAI
         void OwnerDamagedBy(Unit* attacker);
         void OwnerAttacked(Unit* target);
 
+        void HandleTaunt(Unit* taunter, bool apply);
+
     private:
         bool _isVisible(Unit *) const;
         bool _needToStop(void) const;

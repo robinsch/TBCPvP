@@ -74,6 +74,7 @@ void PetAI::_stopAttack()
         return;
     }
 
+    me->ToPet()->SetOriginalTarget(nullptr);
     me->AttackStop();
     me->GetCharmInfo()->SetIsCommandAttack(false);
     HandleReturnMovement();
@@ -534,5 +535,18 @@ bool PetAI::_CanAttack(Unit *target)
 
     // default, though we shouldn't ever get here
     return false;
+}
+
+void PetAI::HandleTaunt(Unit* taunter, bool apply)
+{
+    if (apply)
+        AttackStart(taunter);
+    else
+    {
+        if (Unit* target = me->ToPet()->GetOriginalTarget())
+            AttackStart(target);
+
+        me->ToPet()->SetOriginalTarget(nullptr);
+    }
 }
 

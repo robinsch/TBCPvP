@@ -3636,6 +3636,12 @@ void Aura::HandleModTaunt(bool apply, bool Real)
     if (!caster || !caster->isAlive())
         return;
 
+    if (m_target->GetTypeId() == TYPEID_UNIT)
+    {
+        if (m_target->ToCreature()->isPet())
+            m_target->ToCreature()->ToPet()->AI()->HandleTaunt(caster, apply);
+    }
+
     if (apply)
         m_target->TauntApply(caster);
     else

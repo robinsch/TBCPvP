@@ -226,6 +226,9 @@ class Pet : public Guardian
         uint32 GetBlockAutoCastTimer() { return m_blockAutoCastTimer; }
         uint32 SetBlockAutoCastTimer(uint32 time) { return m_blockAutoCastTimer = time; }
 
+        Unit* GetOriginalTarget() { return m_originalTarget; }
+        void SetOriginalTarget(Unit* target) { m_originalTarget = target; }
+
         uint64 GetAuraUpdateMask() { return m_auraUpdateMask; }
         void SetAuraUpdateMask(uint8 slot) { m_auraUpdateMask |= (uint64(1) << slot); }
         void UnsetAuraUpdateMask(uint8 slot) { m_auraUpdateMask &= ~(uint64(1) << slot); }
@@ -258,6 +261,8 @@ class Pet : public Guardian
         int32   m_duration;                                 // time until unsummon (used mostly for summoned guardians and not used for controlled pets)
         int32   m_loyaltyPoints;
         uint64  m_auraUpdateMask;
+
+        Unit* m_originalTarget;
 
         DeclinedName *m_declinedname;
 

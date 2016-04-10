@@ -92,6 +92,7 @@ m_declinedname(NULL), m_owner(owner)
     m_lastCommandTimer = 0;
     m_lastSpellTimer = 0;
     m_blockAutoCastTimer = 0;
+    m_originalTarget = nullptr;
 
     m_loyaltyPoints = 0;
     m_TrainingPoints = 0;

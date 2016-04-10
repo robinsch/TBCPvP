@@ -150,6 +150,9 @@ class CreatureAI : public UnitAI
         // Called when owner attacks something
         virtual void OwnerAttacked(Unit* /*target*/) {}
 
+        // Called when taunted
+        virtual void HandleTaunt(Unit* /*caster*/, bool /*apply*/) {}
+
         // == Triggered Actions Requested ==================
 
         // Called when creature attack expected (if creature can and no have current victim)

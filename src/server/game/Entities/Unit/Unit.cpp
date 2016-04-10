@@ -9746,10 +9746,6 @@ bool Unit::CanHaveThreatList() const
     if (ToCreature()->isTotem())
         return false;
 
-    // summons can not have a threat list, unless they are controlled by a creature
-    if (ToCreature()->HasSummonMask(SUMMON_MASK_MINION | SUMMON_MASK_GUARDIAN | SUMMON_MASK_CONTROLABLE_GUARDIAN) && IS_PLAYER_GUID(((Pet*)this)->GetOwnerGUID()))
-        return false;
-
     return true;
 }
 
