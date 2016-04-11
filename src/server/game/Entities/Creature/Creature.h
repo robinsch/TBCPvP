@@ -594,6 +594,7 @@ class Creature : public Unit, public GridObject<Creature>
 
         bool IsVisibleInGridForPlayer(Player const* pl) const;
 
+        void HandleDelayedDeath(uint32 deathDelay);
         void RemoveCorpse(bool setSpawnTime = true);
         void ForcedDespawn(uint32 timeMSToDespawn = 0);
 
@@ -684,6 +685,7 @@ class Creature : public Unit, public GridObject<Creature>
         uint32 m_respawnDelay;                              // (secs) delay between corpse disappearance and respawning
         uint32 m_corpseDelay;                               // (secs) delay between death and corpse disappearance
         float m_respawnradius;
+        uint32 m_deathDelayTimer;
 
         uint8 m_emoteState;
         uint32 m_summonMask;

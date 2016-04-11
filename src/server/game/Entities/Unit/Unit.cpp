@@ -1042,7 +1042,8 @@ uint32 Unit::DealDamage(Unit *pVictim, uint32 damage, CleanDamage const* cleanDa
     if (health <= damage)
     {
         sLog->outDebug("DealDamage: victim just died");
-        Kill(pVictim, durabilityLoss);
+        if (pVictim->GetTypeId() == TYPEID_UNIT)
+            pVictim->ToCreature()->HandleDelayedDeath(150);
 
         //Hook for OnPVPKill Event
         if (pVictim->GetTypeId() == TYPEID_PLAYER && this->GetTypeId() == TYPEID_PLAYER)
