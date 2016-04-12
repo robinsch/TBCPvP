@@ -545,6 +545,11 @@ inline Mechanics GetEffectMechanic(SpellEntry const* spellInfo, int32 effect)
     return MECHANIC_NONE;
 }
 
+inline bool IsUnitOwnedAuraEffect(uint32 effect)
+{
+    return IsAreaAuraEffect(effect) || effect == SPELL_EFFECT_APPLY_AURA;
+}
+
 inline uint32 GetDispellMask(DispelType dispel)
 {
     // If dispell all
