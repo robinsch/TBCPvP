@@ -1042,8 +1042,7 @@ uint32 Unit::DealDamage(Unit *pVictim, uint32 damage, CleanDamage const* cleanDa
     if (health <= damage)
     {
         sLog->outDebug("DealDamage: victim just died");
-        if (pVictim->GetTypeId() == TYPEID_UNIT)
-            pVictim->ToCreature()->HandleDelayedDeath(150);
+        Kill(pVictim, durabilityLoss);
 
         //Hook for OnPVPKill Event
         if (pVictim->GetTypeId() == TYPEID_PLAYER && this->GetTypeId() == TYPEID_PLAYER)
@@ -9716,7 +9715,8 @@ void Unit::setDeathState(DeathState s)
         GetMotionMaster()->MoveIdle();
         //without this when removing IncreaseMaxHealth aura player may stuck with 1 hp
         //do not why since in IncreaseMaxHealth currenthealth is checked
-        SetHealth(0);
+        if (GetTypeId() != TYPEID_UNIT) // Creature case will be handeled by m_deathDelayTimer
+            SetHealth(0);
     }
     else if (s == JUST_ALIVED)
         RemoveFlag (UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE); // clear skinnable for creature and player (at battleground)
@@ -12162,7 +12162,10 @@ void Unit::Kill(Unit *pVictim, bool durabilityLoss)
     if (!pVictim->GetHealth())
         return;
 
-    pVictim->SetHealth(0);
+    if (pVictim->GetTypeId() == TYPEID_UNIT)
+        pVictim->ToCreature()->HandleDelayedDeath(CREATURE_DEATH_DELAY);
+    else
+        pVictim->SetHealth(0);
 
     // find player: owner of controlled `this` or `this` itself maybe
     Player* player = GetCharmerOrOwnerPlayerOrPlayerItself();

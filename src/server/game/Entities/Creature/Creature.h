@@ -410,6 +410,8 @@ typedef std::map<uint32, time_t> CreatureSpellCooldowns;
 
 #define MAX_VENDOR_ITEMS 255                                // Limitation in item count field size in SMSG_LIST_INVENTORY
 
+#define CREATURE_DEATH_DELAY 250
+
 class Creature : public Unit, public GridObject<Creature>
 {
     public:

@@ -468,6 +468,18 @@ void Creature::Update(uint32 diff)
     else
         m_GlobalCooldown -= diff;
 
+    // Handle delayed creature death
+    if (m_deathDelayTimer)
+    {
+        if (m_deathDelayTimer <= diff)
+        {
+            m_deathDelayTimer = 0;
+            SetHealth(0);
+        }
+        else
+            m_deathDelayTimer -= diff;
+    }
+
     switch (m_deathState)
     {
         case JUST_ALIVED:
@@ -549,17 +561,6 @@ void Creature::Update(uint32 diff)
             }
 
             Unit::Update(diff);
-
-            if (m_deathDelayTimer)
-            {
-                if (m_deathDelayTimer <= diff)
-                {
-                    m_deathDelayTimer = 0;
-                    Kill(this, false);
-                }
-                else
-                    m_deathDelayTimer -= diff;
-            }
 
             // creature can be dead after Unit::Update call
             // CORPSE/DEAD state will processed at next tick (in other case death timer will be updated unexpectedly)
@@ -2280,6 +2281,9 @@ time_t Creature::GetLinkedCreatureRespawnTime() const
 void Creature::HandleDelayedDeath(uint32 deathDelay)
 {
     SetHealth(1);
-    m_deathDelayTimer = deathDelay;
+
+    // only set deathDelayTimer if we don't have already one set
+    if (!m_deathDelayTimer)
+        m_deathDelayTimer = deathDelay;
 }
 
