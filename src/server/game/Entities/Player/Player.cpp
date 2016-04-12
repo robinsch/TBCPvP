@@ -21927,7 +21927,7 @@ void Player::AddGlobalCooldown(SpellEntry const *spellInfo, Spell const *spell)
         return;
 
     if (!(spellInfo->Attributes & (SPELL_ATTR_ABILITY | SPELL_ATTR_TRADESPELL)))
-        cdTime = int32(float(cdTime) * GetFloatValue(UNIT_MOD_CAST_SPEED));
+        cdTime = int32(float(cdTime) * m_modCastingSpeedPctPositive);
     else if (spell->IsRangedSpell() && !spell->IsAutoRepeat())
         cdTime = int32(float(cdTime) * m_modAttackSpeedPct[RANGED_ATTACK]);
 
