@@ -302,6 +302,7 @@ Unit::Unit()
 
     m_CombatTimer = 0;
     m_lastManaUse = 0;
+    m_visibilityUpdateTimer = 0;
 
     //m_victimThreat = 0.0f;
     for (uint8 i = 0; i < MAX_SPELL_SCHOOL; ++i)
@@ -376,6 +377,21 @@ void Unit::Update(uint32 p_time)
             else
                 m_CombatTimer -= p_time;
         }
+    }
+
+    // update visibility notify timer
+    if (m_visibilityUpdateTimer > 0)
+    {
+        if (p_time >= m_visibilityUpdateTimer)
+        {
+            if (m_Visibility == VISIBILITY_GROUP_STEALTH)
+                DestroyForNearbyPlayers(true);
+
+            UpdateObjectVisibility();
+            m_visibilityUpdateTimer = 0;
+        }
+        else
+            m_visibilityUpdateTimer -= p_time;
     }
 
     //not implemented before 3.0.2
@@ -9427,14 +9443,18 @@ bool Unit::canDetectStealthOf(Unit const* target, float distance) const
     return distance < visibleDistance;
 }
 
-void Unit::SetVisibility(UnitVisibility x)
+void Unit::SetVisibility(UnitVisibility x, uint32 updateDelay)
 {
     m_Visibility = x;
 
-    if (m_Visibility == VISIBILITY_GROUP_STEALTH)
-        DestroyForNearbyPlayers(true);
-
-    UpdateObjectVisibility();
+    if (!updateDelay)
+    {
+        if (m_Visibility == VISIBILITY_GROUP_STEALTH)
+            DestroyForNearbyPlayers(true);
+        UpdateObjectVisibility();
+    }
+    else
+        SetVisibilityUpdateTimer(updateDelay);
 }
 
 void Unit::UpdateSpeed(UnitMoveType mtype, bool forced, float ratio)

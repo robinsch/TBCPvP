@@ -510,6 +510,12 @@ enum UnitVisibility
     VISIBILITY_RESPAWN            = 5                       // special totally not detectable visibility for force delete object at respawn command
 };
 
+enum UnitUpdateDelay
+{
+    UPDATE_DELAY_VISIBILITY_DEFAULT = 50,
+    UPDATE_DELAY_VISIBILITY_DELAYED = 250
+};
+
 // Value masks for UNIT_FIELD_FLAGS
 enum UnitFlags
 {
@@ -1371,7 +1377,10 @@ class Unit : public WorldObject
 
         // Visibility system
         UnitVisibility GetVisibility() const { return m_Visibility; }
-        void SetVisibility(UnitVisibility x);
+        void SetVisibility(UnitVisibility x, uint32 updateDelay = UPDATE_DELAY_VISIBILITY_DEFAULT);
+
+        uint32 GetVisibilityUpdateTimer() { return m_visibilityUpdateTimer; }
+        void SetVisibilityUpdateTimer(uint32 updateTime) { m_visibilityUpdateTimer = updateTime; }
 
         // common function for visibility checks for player/creatures with detection code
         virtual bool canSeeOrDetect(Unit const* u, bool detect, bool inVisibleList = false, bool is3dDistance = true) const;
@@ -1653,6 +1662,7 @@ class Unit : public WorldObject
         uint32 m_state;                                     // Even derived shouldn't modify
         uint32 m_CombatTimer;
         uint32 m_lastManaUse;                               // msecs
+        uint32 m_visibilityUpdateTimer;
 
         uint32 m_damageTakenCounter[TOTAL_AURAS];
 
