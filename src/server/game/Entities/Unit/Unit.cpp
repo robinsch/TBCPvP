@@ -9070,7 +9070,10 @@ void Unit::CombatStart(Unit* target, bool initialAggro, uint32 spellId)
             if (plrTarget->GetCombatImmuneTime())
                 return;
         }
-        target->SetInCombatWith(this);
+
+        // Don't set target in combat when isolated
+        if (!target->hasUnitState(UNIT_STAT_ISOLATED))
+            target->SetInCombatWith(this);
     }
     Unit *who = target->GetCharmerOrOwnerOrSelf();
     if (who->GetTypeId() == TYPEID_PLAYER)
