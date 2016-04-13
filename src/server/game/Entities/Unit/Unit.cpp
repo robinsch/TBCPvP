@@ -12975,6 +12975,9 @@ void Unit::SendHealthUpdateDueToCharm(Player* charmer)
 
 Unit* Unit::GetMeleeHitRedirectTarget(Unit* victim, SpellEntry const* spellInfo)
 {
+    if ((spellInfo && spellInfo->AttributesEx & (SPELL_ATTR_EX_CANT_BE_REDIRECTED | SPELL_ATTR_EX_CANT_BE_REFLECTED)) == 0)
+        return victim;
+
     float maxRange = NOMINAL_MELEE_RANGE;
     if (spellInfo && spellInfo->rangeIndex)
         maxRange = GetSpellMaxRange(sSpellRangeStore.LookupEntry(spellInfo->rangeIndex));

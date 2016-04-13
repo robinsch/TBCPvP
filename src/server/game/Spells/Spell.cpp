@@ -1679,9 +1679,6 @@ void Spell::SetTargetMap(uint32 i, uint32 cur)
 
             switch (cur)
             {
-                case TARGET_UNIT_TARGET_ENEMY:
-                    if (((m_spellInfo->AttributesEx & (0x8 | 0x80)) == 0 ) || (m_spellInfo->SpellIconID == 225 && m_spellInfo->SpellVisual == 262))
-                        AddUnitTarget(m_caster->GetMeleeHitRedirectTarget(target, m_spellInfo), i);
                 case TARGET_UNIT_CHAINHEAL:
                     pushType = PUSH_CHAIN;
                     break;
@@ -1691,8 +1688,12 @@ void Spell::SetTargetMap(uint32 i, uint32 cur)
                 case TARGET_UNIT_MINIPET:
                     AddUnitTarget(target, i);
                     break;
-                case TARGET_UNIT_TARGET_ANY: // SelectMagnetTarget()?
-                    AddUnitTarget(SelectMagnetTarget(), i);
+                case TARGET_UNIT_TARGET_ANY:
+                case TARGET_UNIT_TARGET_ENEMY:
+                    if (m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MELEE || m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_RANGED)
+                        AddUnitTarget(m_caster->GetMeleeHitRedirectTarget(target, m_spellInfo), i);
+                    else if (m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MAGIC)
+                        AddUnitTarget(SelectMagnetTarget(), i);
                     break;
                 case TARGET_UNIT_PARTY_TARGET:
                 case TARGET_UNIT_CLASS_TARGET:
