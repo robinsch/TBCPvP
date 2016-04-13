@@ -2121,6 +2121,7 @@ enum DiminishingGroup
     DIMINISHING_CHARM,
     // Mage Specific
     DIMINISHING_POLYMORPH,
+    DIMINISHING_DRAGONS_BREATH,
     // Rogue Specific
     DIMINISHING_KIDNEYSHOT,                                 // Kidney Shot is not diminished with Cheap Shot
     // Warlock Specific

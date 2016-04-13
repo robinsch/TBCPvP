@@ -3412,11 +3412,21 @@ DiminishingGroup GetDiminishingReturnsGroupForSpell(SpellEntry const* spellproto
     // Explicit Diminishing Groups
     switch (spellproto->SpellFamilyName)
     {
+        case SPELLFAMILY_GENERIC:
+        {
+            // Frostbite
+            if (spellproto->Id == 12494) 
+                return DIMINISHING_TRIGGER_ROOT;
+            // Intimidation
+            else if (spellproto->Id == 24394)
+                return DIMINISHING_CONTROL_STUN;
+            break;
+        }
         case SPELLFAMILY_MAGE:
         {
-            // Polymorph
-            if ((spellproto->SpellFamilyFlags & 0x00001000000LL) && spellproto->EffectApplyAuraName[0] == SPELL_AURA_MOD_CONFUSE)
-                return DIMINISHING_POLYMORPH;
+            // Dragon's Breath
+            if (spellproto->SpellFamilyFlags & 0x00000800000LL)
+                return DIMINISHING_DRAGONS_BREATH;
             break;
         }
         case SPELLFAMILY_ROGUE:
@@ -3450,10 +3460,7 @@ DiminishingGroup GetDiminishingReturnsGroupForSpell(SpellEntry const* spellproto
             // Seduction
             else if (spellproto->SpellFamilyFlags & 0x00040000000LL)
                 return DIMINISHING_FEAR;
-            // Fear
-            //else if (spellproto->SpellFamilyFlags & 0x40840000000LL)
-            //    return DIMINISHING_WARLOCK_FEAR;
-            // Unstable affliction dispel silence
+            // Unstable Affliction
             else if (spellproto->Id == 31117)
                 return DIMINISHING_UNSTABLE_AFFLICTION;
             break;
@@ -3463,17 +3470,14 @@ DiminishingGroup GetDiminishingReturnsGroupForSpell(SpellEntry const* spellproto
             // Cyclone
             if (spellproto->SpellFamilyFlags & 0x02000000000LL)
                 return DIMINISHING_BLIND_CYCLONE;
-            // Nature's Grasp trigger
+            // Nature's Grasp
             if (spellproto->SpellFamilyFlags & 0x00000000200LL && spellproto->Attributes == 0x49010000)
                 return DIMINISHING_CONTROL_ROOT;
-            // Feral Charge (Root Effect)
-            if (spellproto->Id == 45334)
-                return DIMINISHING_NONE;
             break;
         }
         case SPELLFAMILY_WARRIOR:
         {
-            // Hamstring - limit duration to 10s in PvP
+            // Hamstring
             if (spellproto->SpellFamilyFlags & 0x00000000002LL)
                 return DIMINISHING_LIMITONLY;
             break;
@@ -3483,17 +3487,6 @@ DiminishingGroup GetDiminishingReturnsGroupForSpell(SpellEntry const* spellproto
             // Turn Evil
             if (spellproto->Id == 10326)
                 return DIMINISHING_FEAR;
-            break;
-            //spellproto->SpellFamilyFlags & 0x00000004000LL &&
-        }
-        default:
-        {
-            if (spellproto->Id == 12494) // frostbite
-                return DIMINISHING_TRIGGER_ROOT;
-
-            // Intimidation
-            if (spellproto->Id == 24394)
-                return DIMINISHING_CONTROL_STUN;
             break;
         }
     }
