@@ -2621,24 +2621,27 @@ float Unit::MeleeSpellMissChance(const Unit *pVictim, WeaponAttackType attType, 
     return miss_chance;
 }
 
-int32 Unit::GetMechanicResistChance(const SpellEntry *spell)
+int32 Unit::GetMechanicResistChance(SpellEntry const* spellInfo) const
 {
-    if (!spell)
+    if (!spellInfo)
         return 0;
-    int32 resist_mech = 0;
+
+    int32 resistMech = 0;
     for (uint8 eff = 0; eff < MAX_SPELL_EFFECTS; ++eff)
     {
-        if (spell->Effect[eff] == 0)
+        if (spellInfo->Effect[eff] == 0)
            break;
-        int32 effect_mech = GetEffectMechanic(spell, eff);
-        if (effect_mech)
+
+        int32 effectMech = GetEffectMechanic(spellInfo, eff);
+        if (effectMech)
         {
-            int32 temp = GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_MECHANIC_RESISTANCE, effect_mech);
-            if (resist_mech < temp)
-                resist_mech = temp;
+            int32 temp = GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_MECHANIC_RESISTANCE, effectMech);
+            if (resistMech < temp)
+                resistMech = temp;
         }
     }
-    return resist_mech;
+
+    return resistMech;
 }
 
 // Melee based spells hit result calculations
@@ -2683,15 +2686,6 @@ SpellMissInfo Unit::MeleeSpellHitResult(Unit *pVictim, SpellEntry const *spell, 
         tmp += missChance;
         if (roll < tmp)
             return SPELL_MISS_MISS;
-    }
-
-    if (canResist)
-    {
-        // Chance resist mechanic
-        int32 resist_chance = pVictim->GetMechanicResistChance(spell)*100;
-        tmp += resist_chance;
-        if (roll < tmp)
-            return SPELL_MISS_RESIST;
     }
 
     // Same spells cannot be parry/dodge
@@ -2820,8 +2814,6 @@ SpellMissInfo Unit::MagicSpellHitResult(Unit *pVictim, SpellEntry const *spell)
         modHitChance-=pVictim->GetTotalAuraModifier(SPELL_AURA_MOD_DISPEL_RESIST);
     // Chance resist debuff
     modHitChance -= pVictim->GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_DEBUFF_RESISTANCE, int32(spell->Dispel));
-    // Chance resist mechanic (select max value from every mechanic spell effect)
-    modHitChance -= pVictim->GetMechanicResistChance(spell);
 
     int32 HitChance = modHitChance * 100;
     // Increase hit chance from attacker SPELL_AURA_MOD_SPELL_HIT_CHANCE and attacker ratings
@@ -3701,17 +3693,7 @@ bool Unit::AddAura(Aura *Aur)
     }
 
     SpellEntry const* aurSpellInfo = Aur->GetSpellProto();
-
     spellEffectPair spair = spellEffectPair(Aur->GetId(), Aur->GetEffIndex());
-
-    if (this->HasAura(1044,0))
-    {
-        for (uint8 i = 0 ; i < MAX_SPELL_EFFECTS; ++i)
-        {
-            if (IsImmunedToSpellEffect(aurSpellInfo, i))
-                return false;
-        }
-    }
 
     bool stackModified=false;
     // passive and persistent auras can stack with themselves any number of times
@@ -12876,19 +12858,8 @@ void Unit::AddAura(uint32 spellId, Unit* target)
     {
         if (spellInfo->Effect[i] == SPELL_EFFECT_APPLY_AURA)
         {
-            if (target->IsImmunedToSpellEffect(spellInfo, i))
-                continue;
-
-            /*if (spellInfo->EffectImplicitTargetA[i] == TARGET_UNIT_CASTER)
-            {
-                Aura *Aur = CreateAura(spellInfo, i, NULL, this, this);
-                AddAura(Aur);
-            }
-            else*/
-            {
-                Aura *Aur = CreateAura(spellInfo, i, NULL, target, this);
-                target->AddAura(Aur);
-            }
+            Aura *Aur = CreateAura(spellInfo, i, NULL, target, this);
+            target->AddAura(Aur);
         }
     }
 }

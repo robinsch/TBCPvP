@@ -614,10 +614,6 @@ void Aura::Update(uint32 diff)
                 PeriodicTick();
         }
     }
-
-    // remove auras on immunity at each tick
-    if (GetSpellProto()->AttributesEx & SPELL_ATTR_EX_DISPEL_AURAS_ON_IMMUNITY)
-        m_target->RemoveAurasWithDispelType(DispelType(m_modifier.m_miscvalue));
 }
 
 bool AreaAura::CheckTarget(Unit *target)
