@@ -226,13 +226,19 @@ class Pet : public Guardian
         uint32 GetBlockAutoCastTimer() { return m_blockAutoCastTimer; }
         uint32 SetBlockAutoCastTimer(uint32 time) { return m_blockAutoCastTimer = time; }
 
-        Unit* GetOriginalTarget() { return m_originalTarget; }
+        Unit* GetOriginalTarget() { return m_originalTarget; } const
         void SetOriginalTarget(Unit* target) { m_originalTarget = target; }
+        Unit* GetTemporaryTarget() { return m_tempTarget; } const
+        void SetTemporaryTarget(Unit* target) { m_tempTarget = target; }
 
         uint64 GetAuraUpdateMask() { return m_auraUpdateMask; }
         void SetAuraUpdateMask(uint8 slot) { m_auraUpdateMask |= (uint64(1) << slot); }
         void UnsetAuraUpdateMask(uint8 slot) { m_auraUpdateMask &= ~(uint64(1) << slot); }
         void ResetAuraUpdateMask() { m_auraUpdateMask = 0; }
+
+        void queueSpellCast(Unit* tempTarget, Unit* originalTarget, uint32 spellEntry);
+        void cancelQueuedSpellCast();
+        bool isSpellQueued() { return m_queuedSpellEntry; };
 
         DeclinedName const* GetDeclinedNames() const { return m_declinedname; }
 
@@ -263,6 +269,9 @@ class Pet : public Guardian
         uint64  m_auraUpdateMask;
 
         Unit* m_originalTarget;
+        Unit* m_tempTarget;
+
+        uint32 m_queuedSpellEntry;
 
         DeclinedName *m_declinedname;
 

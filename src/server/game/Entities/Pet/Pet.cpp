@@ -32,6 +32,7 @@
 #include "CreatureAI.h"
 #include "Unit.h"
 #include "Util.h"
+#include "Spell.h"
 
 char const* petTypeSuffix[MAX_PET_TYPE] =
 {
@@ -93,11 +94,14 @@ m_declinedname(NULL), m_owner(owner)
     m_lastSpellTimer = 0;
     m_blockAutoCastTimer = 0;
     m_originalTarget = nullptr;
+    m_tempTarget = nullptr;
 
     m_loyaltyPoints = 0;
     m_TrainingPoints = 0;
 
     m_auraUpdateMask = 0;
+
+    m_queuedSpellEntry = 0;
 
     m_spells.clear();
     m_Auras.clear();
@@ -582,6 +586,87 @@ void Pet::Update(uint32 diff)
                 }
             }
 
+            // queued spell system, if we have a queued spell try to execute it on current update loop otherwise it will be checked on next update tick again
+            if (isSpellQueued())
+            {
+                Unit* pOwner = GetCharmerOrOwner();
+                if (!pOwner)
+                    return;
+
+                if (m_tempTarget && m_tempTarget->isAlive())
+                {
+                    float max_range = GetSpellMaxRange(m_queuedSpellEntry);
+
+                    // check for range and los? ///@todo: should we include objectsize (boundary radius) need to check ::CheckCast
+                    // or why dont I just use checkcast?
+
+                    if (IsWithinLOSInMap(m_tempTarget) && IsWithinDist(m_tempTarget, max_range))
+                    {
+                        StopMoving();
+                        GetMotionMaster()->Clear(false);
+                        GetMotionMaster()->MoveIdle();
+
+                        /// @todo: make this one function 
+                        GetCharmInfo()->SetIsCommandAttack(false);
+                        GetCharmInfo()->SetIsAtStay(false);
+                        GetCharmInfo()->SetIsFollowing(false);
+                        GetCharmInfo()->SetIsReturning(false);
+
+                        // considered as triggerd? nope idk
+                        CastSpell(m_tempTarget, m_queuedSpellEntry, false);
+
+                        // okay: if positive / negative then we should return to our last target (req: target is alive and still in map?) 
+                        // if we dont have a last target return to owner
+                        if (IsPositiveSpell(m_queuedSpellEntry))
+                        {
+                            if (m_originalTarget && m_originalTarget->isAlive())
+                            {
+                                GetCharmInfo()->SetIsCommandAttack(true);
+                                GetCharmInfo()->SetIsAtStay(false);
+                                GetCharmInfo()->SetIsFollowing(false);
+                                GetCharmInfo()->SetIsReturning(false);
+
+                                if (ToCreature()->IsAIEnabled)
+                                    ToCreature()->AI()->AttackStart(m_originalTarget);
+                            }
+                            else // no target or target is dead - return to owner
+                            {
+                                if (GetCharmInfo()->HasCommandState(COMMAND_STAY))
+                                {
+                                    if (!GetCharmInfo()->IsAtStay() && !GetCharmInfo()->IsReturning())
+                                    {
+                                        // Return to previous position where stay was clicked
+                                        if (!GetCharmInfo()->IsCommandAttack())
+                                        {
+                                            float x, y, z;
+
+                                            GetCharmInfo()->GetStayPosition(x, y, z);
+                                            GetCharmInfo()->SetIsReturning(true);
+                                            GetMotionMaster()->Clear();
+                                            GetMotionMaster()->MovePoint(GetGUIDLow(), x, y, z);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (!GetCharmInfo()->IsFollowing() && !GetCharmInfo()->IsReturning())
+                                        {
+                                            if (!GetCharmInfo()->IsCommandAttack())
+                                            {
+                                                GetCharmInfo()->SetIsReturning(true);
+                                                GetMotionMaster()->Clear();
+                                                GetMotionMaster()->MoveFollow(GetCharmerOrOwner(), PET_FOLLOW_DIST, GetFollowAngle());
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        cancelQueuedSpellCast();
+                    }
+                }
+            }
+                                       
             if (m_lastCommandTimer <= diff)
                 m_lastCommandTimer = 0;
             else
@@ -2054,4 +2139,18 @@ void Pet::ProhibitSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs)
 
     if (Player* owner = GetOwner())
         owner->GetSession()->SendPacket(&data);
+}
+
+void Pet::queueSpellCast(Unit* tempTarget, Unit* originalTarget, uint32 spellEntry)
+{
+    m_tempTarget = tempTarget;
+    m_originalTarget = originalTarget;
+    m_queuedSpellEntry = spellEntry;
+}
+
+void Pet::cancelQueuedSpellCast()
+{
+    m_tempTarget = nullptr;
+    m_originalTarget = nullptr;
+    m_queuedSpellEntry = 0;
 }

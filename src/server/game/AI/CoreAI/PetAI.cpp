@@ -123,7 +123,7 @@ void PetAI::UpdateAI(const uint32 diff)
             else
                 HandleReturnMovement();
         }
-        else
+        else if (!me->ToPet()->isSpellQueued())
             HandleReturnMovement();
     }
     else if (owner && !me->hasUnitState(UNIT_STAT_FOLLOW)) // no charm info and no victim
