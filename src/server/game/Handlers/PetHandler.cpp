@@ -406,7 +406,6 @@ void WorldSession::HandlePetActionHelper(Unit *pet, uint64 guid1, uint16 spellid
                         pet->SendPetCastFail(spellid, result);
                 }
                 
-
                 // reset specific flags in case of spell fail. AI will reset other flags
                 if (pet->GetCharmInfo())
                     pet->GetCharmInfo()->SetIsCommandAttack(false);
