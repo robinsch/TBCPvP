@@ -173,8 +173,8 @@ ArcherAI::ArcherAI(Creature* c) : CreatureAI(c)
     if (!m_minRange)
         m_minRange = MELEE_RANGE;
 
-    me->m_CombatDistance = spellInfo ? GetSpellMaxRange(spellInfo) : 0;
-    me->m_SightDistance = me->m_CombatDistance;
+    me->SetCombatDistance(spellInfo ? GetSpellMaxRange(spellInfo) : 0);
+    me->m_SightDistance = me->GetCombatDistance();
 }
 
 void ArcherAI::AttackStart(Unit* who)
@@ -190,7 +190,7 @@ void ArcherAI::AttackStart(Unit* who)
     else
     {
         if (me->Attack(who, false))
-            me->GetMotionMaster()->MoveChase(who, me->m_CombatDistance);
+            me->GetMotionMaster()->MoveChase(who, me->GetCombatDistance());
     }
 }
 

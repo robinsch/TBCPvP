@@ -2286,4 +2286,3 @@ void Creature::HandleDelayedDeath(uint32 deathDelay)
     if (!m_deathDelayTimer)
         m_deathDelayTimer = deathDelay;
 }
-

@@ -2154,3 +2154,26 @@ void Pet::cancelQueuedSpellCast()
     m_originalTarget = nullptr;
     m_queuedSpellEntry = 0;
 }
+
+float Pet::GetChaseDistance() const
+{
+    float range = MELEE_RANGE;
+
+    for (uint8 i = 0; i < GetPetAutoSpellSize(); ++i)
+    {
+        uint32 spellEntry = GetPetAutoSpellOnPos(i);
+        if (!spellEntry)
+            continue;
+
+        if (SpellEntry const* spellInfo = sSpellStore.LookupEntry(spellEntry))
+        {
+            if (spellInfo->RecoveryTime == 0 && // No cooldown
+                spellInfo->rangeIndex != 1 &&  // Self cast
+                spellInfo->rangeIndex != 2 && // Combat range
+                range < GetSpellMaxRange(spellInfo))
+                range = GetSpellMinRange(spellInfo);
+        }
+    }
+
+    return range;
+}

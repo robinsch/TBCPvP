@@ -27,6 +27,8 @@
 class Creature;
 class Spell;
 
+typedef std::vector<std::pair<Unit*, Spell*>> TargetSpellList;
+
 class PetAI : public CreatureAI
 {
     public:
@@ -64,6 +66,8 @@ class PetAI : public CreatureAI
         void HandleReturnMovement();
         void DoAttack(Unit *target, bool chase);
         bool _CanAttack(Unit *target);
+
+        TargetSpellList targetSpellStore;
 };
 #endif
 

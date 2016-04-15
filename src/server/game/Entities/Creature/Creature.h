@@ -665,7 +665,10 @@ class Creature : public Unit, public GridObject<Creature>
         void ResetPlayerDamageReq() { m_PlayerDamageReq = GetHealth() / 2; }
         uint32 m_PlayerDamageReq;
 
-        float m_SightDistance, m_CombatDistance;
+        float GetCombatDistance() const { return m_CombatDistance; }
+        void SetCombatDistance(float combatDistance) { m_CombatDistance = combatDistance; }
+
+        float m_SightDistance;
     protected:
         bool CreateFromProto(uint32 guidlow, uint32 Entry, uint32 team, const CreatureData *data = NULL);
         bool InitEntry(uint32 entry, uint32 team=ALLIANCE, const CreatureData* data=NULL);
@@ -705,6 +708,8 @@ class Creature : public Unit, public GridObject<Creature>
         bool m_regenHealth;
         bool m_AI_locked;
         bool m_isDeadByDefault;
+
+        float m_CombatDistance;
 
         SpellSchoolMask m_meleeDamageSchoolMask;
         uint32 m_originalEntry;
