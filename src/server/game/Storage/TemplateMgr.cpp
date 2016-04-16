@@ -1,10 +1,11 @@
 #include "TemplateMgr.h"
+#include "DBCStores.h"
 
 void TemplateMgr::LoadItems()
 {
 	QueryResult_AutoPtr result = WorldDatabase.PQuery(
         "SELECT templateEntry, itemEntry, itemAmount, enchantEntry, gemEntry1, gemEntry2, gemEntry3"
-        " FROM template_item");
+        " FROM template_item ORDER BY addPriority");
 
     if (result)
     {
@@ -151,5 +152,39 @@ void TemplateMgr::AddReputations(Player* player, TemplateReputationEntry te)
             if (FactionEntry const* fe = sFactionStore.LookupEntry(it2.factionEntry))
 				player->ModifyFactionReputation(fe, it2.factionStanding);
         }
+    }
+}
+
+TemplateSpellEntry const TemplateMgr::GetTemplateSpellEntryForClass(uint32 playerClass)
+{
+    switch (playerClass)
+    {
+        case CLASS_WARRIOR: return DEFAULT_WARRIOR; break;
+        case CLASS_PALADIN: return DEFAULT_PALADIN; break;
+        case CLASS_HUNTER:  return DEFAULT_HUNTER;  break;
+        case CLASS_ROGUE:   return DEFAULT_ROGUE;   break;
+        case CLASS_PRIEST:  return DEFAULT_PRIEST;  break;
+        case CLASS_SHAMAN:  return DEFAULT_SHAMAN;  break;
+        case CLASS_MAGE:    return DEFAULT_MAGE;    break;
+        case CLASS_WARLOCK: return DEFAULT_WARLOCK; break;
+        case CLASS_DRUID:   return DEFAULT_DRUID;   break;
+        default: return TemplateSpellEntry(0);
+    }
+}
+
+TemplateItemEntry const TemplateMgr::GetDefaultTemplateItemEntryForClass(uint32 playerClass)
+{
+    switch (playerClass)
+    {
+        case CLASS_WARRIOR: return DEFAULT_ITEM_WARRIOR; break;
+        case CLASS_PALADIN: return DEFAULT_ITEM_PALADIN; break;
+        case CLASS_HUNTER:  return DEFAULT_ITEM_HUNTER;  break;
+        case CLASS_ROGUE:   return DEFAULT_ITEM_ROGUE;   break;
+        case CLASS_PRIEST:  return DEFAULT_ITEM_PRIEST;  break;
+        case CLASS_SHAMAN:  return DEFAULT_ITEM_SHAMAN;  break;
+        case CLASS_MAGE:    return DEFAULT_ITEM_MAGE;    break;
+        case CLASS_WARLOCK: return DEFAULT_ITEM_WARLOCK; break;
+        case CLASS_DRUID:   return DEFAULT_ITEM_DRUID;   break;
+        default: return TemplateItemEntry(0);
     }
 }

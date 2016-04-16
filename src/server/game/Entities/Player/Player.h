@@ -777,6 +777,13 @@ enum PlayerTalentSpecializations
     TALENT_SPECIALIZATION_TANK      = 3
 };
 
+enum PlayerCharacterMode
+{
+    CHARACTER_MODE_BLIZZLIKE     = 1,
+    CHARACTER_MODE_PRE_INSTANT   = 2,
+    CHARACTER_MODE_INSTANT       = 3
+};
+
 // Player summoning auto-decline time (in secs)
 #define MAX_PLAYER_SUMMON_DELAY                   (2*MINUTE)
 #define MAX_MONEY_AMOUNT                       (0x7FFFFFFF-1)
@@ -2293,6 +2300,9 @@ class Player : public Unit, public GridObject<Player>
         uint32 GetCombatImmuneTime() { return m_combatImmuneTimer; }
         void SetCombatImmuneTime(uint32 time) { m_combatImmuneTimer = time; }
 
+        PlayerCharacterMode getCharacterMode() const { return m_characterMode; }
+        void setCharacterMode(PlayerCharacterMode characterMode) { m_characterMode = characterMode; }
+
     protected:
 
         uint32 m_contestedPvPTimer;
@@ -2569,6 +2579,9 @@ class Player : public Unit, public GridObject<Player>
 
         uint32 m_customTitleActive;
         uint32 m_customTitleKnown;
+
+        // Character Mode: Player can either play blizzlike or instant character
+        PlayerCharacterMode m_characterMode;
 };
 
 void AddItemsSetItem(Player*player, Item *item);

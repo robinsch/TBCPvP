@@ -69,6 +69,8 @@
 #include "UnorderedSet.h"
 #include "ScriptMgr.h"
 
+#include "TemplateMgr.h"
+
 #include <cmath>
 #include <iomanip>
 
@@ -900,6 +902,8 @@ Player::Player (WorldSession *session): Unit()
     m_isArenaSpectator = false;
 
     m_currentVendorEntry = -1;
+
+    m_characterMode = CHARACTER_MODE_BLIZZLIKE;
 }
 
 Player::~Player()
@@ -1217,6 +1221,9 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
 
 bool Player::StoreNewItemInBestSlots(uint32 titem_id, uint32 titem_amount)
 {
+    if (!titem_id)
+        return false;
+
     sLog->outDebug("STORAGE: Creating initial item, itemId = %u, count = %u", titem_id, titem_amount);
 
     // attempt equip by one
@@ -15561,8 +15568,8 @@ bool Player::LoadFromDB(uint32 guid, SqlQueryHolder *holder)
     //"resettalents_time, trans_x, trans_y, trans_z, trans_o, transguid, extra_flags, stable_slots, at_login, zone, online, death_expire_time, taxi_path, dungeon_difficulty, "
     // 40           41                42                43                    44          45          46              47           48               49              50
     //"arenaPoints, totalHonorPoints, todayHonorPoints, yesterdayHonorPoints, totalKills, todayKills, yesterdayKills, chosenTitle, knownCurrencies, watchedFaction, drunk, "
-    // 51      52         53         54          55           56             57           58         59
-    //"health, powerMana, powerRage, powerFocus, powerEnergy, powerHapiness, instance_id, specCount, activeSpec, FROM characters WHERE guid = '%u'", guid);
+    // 51      52         53         54          55           56             57           58         59          60
+    //"health, powerMana, powerRage, powerFocus, powerEnergy, powerHapiness, instance_id, specCount, activeSpec, characterMode FROM characters WHERE guid = '%u'", guid);
     QueryResult_AutoPtr result = holder->GetResult(PLAYER_LOGIN_QUERY_LOADFROM);
 
     if (!result)
@@ -16080,6 +16087,9 @@ bool Player::LoadFromDB(uint32 guid, SqlQueryHolder *holder)
         uint32 savedPower = fields[51+i].GetUInt32();
         SetPower(Powers(i), savedPower > GetMaxPower(Powers(i)) ? GetMaxPower(Powers(i)) : savedPower);
     }
+
+    PlayerCharacterMode cm = PlayerCharacterMode(fields[59].GetUInt32());
+    setCharacterMode(cm);
 
     sLog->outDebug("The value of player %s after load item and aura is: ", m_name.c_str());
     outDebugValues();
@@ -17309,7 +17319,7 @@ void Player::SaveToDB()
         "trans_x, trans_y, trans_z, trans_o, transguid, extra_flags, stable_slots, at_login, zone, "
         "death_expire_time, taxi_path, arenaPoints, totalHonorPoints, todayHonorPoints, yesterdayHonorPoints, "
         "totalKills, todayKills, yesterdayKills, chosenTitle, watchedFaction, drunk, health, "
-        "powerMana, powerRage, powerFocus, powerEnergy, powerHappiness, latency, specCount, activeSpec) VALUES ("
+        "powerMana, powerRage, powerFocus, powerEnergy, powerHappiness, latency, specCount, activeSpec, characterMode) VALUES ("
         << GetGUIDLow() << ", "
         << GetSession()->GetAccountId() << ", '"
         << sql_name << "', "
@@ -17421,6 +17431,8 @@ void Player::SaveToDB()
     ss << uint32(m_specsCount);
     ss << ", ";
     ss << uint32(m_activeSpec);
+    ss << ", ";
+    ss << uint32(m_characterMode);
     ss << ")";
 
     CharacterDatabase.BeginTransaction();
@@ -20569,6 +20581,10 @@ void Player::learnAllSpells(bool loading)
         uint32 tspell = *itr;
         if (tspell)
         {
+            SpellEntry const* spellInfo = sSpellStore.LookupEntry(tspell);
+            if (!spellInfo || !SpellMgr::IsSpellValid(spellInfo, this, false))
+                continue;
+
             sLog->outDebug("PLAYER (Class: %u Race: %u): Adding initial spell, id = %u", uint32(getClass()), uint32(getRace()), tspell);
             if (loading)                                    // not care about passive spells or loading case
                 addSpell(tspell, true, true, true, false);

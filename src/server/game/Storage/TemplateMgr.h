@@ -4,6 +4,28 @@
 #define MAX_GEM_SOCKETS 3
 
 enum TemplateItemEntry {
+    DEFAULT_ITEM_WARRIOR = 1,
+    WARRIOR_ITEM_TANK,
+    WARRIOR_ITEM_DPS,
+
+    DEFAULT_ITEM_PALADIN,
+    PALADIN_ITEM_HOLY,
+    PALADIN_ITEM_PROT,
+    PALADIN_ITEM_RET,
+
+    DEFAULT_ITEM_HUNTER,
+
+    DEFAULT_ITEM_ROGUE,
+
+    DEFAULT_ITEM_PRIEST,
+
+    DEFAULT_ITEM_SHAMAN,
+
+    DEFAULT_ITEM_MAGE,
+
+    DEFAULT_ITEM_WARLOCK,
+
+    DEFAULT_ITEM_DRUID
 };
 
 enum TemplateSpellEntry {
@@ -82,7 +104,7 @@ struct TemplateReputation
     uint32 factionStanding;
 };
 
-typedef UNORDERED_MAP<uint32, std::vector<TemplateItem>> TemplateItems;
+typedef std::map<uint32, std::vector<TemplateItem>> TemplateItems;
 typedef UNORDERED_MAP<uint32, std::vector<uint32> /*spellEntry*/> TemplateSpells;
 typedef UNORDERED_MAP<uint32, std::vector<TemplateReputation>> TemplateReputations;
 
@@ -99,6 +121,8 @@ public:
     void AddItems(Player* player, TemplateItemEntry te);
     void AddSpells(Player* player, TemplateSpellEntry te);
     void AddReputations(Player* player, TemplateReputationEntry te);
+    TemplateSpellEntry const GetTemplateSpellEntryForClass(uint32 playerClass);
+    TemplateItemEntry const GetDefaultTemplateItemEntryForClass(uint32 playerClass);
 
 private:
     void LoadItems();
