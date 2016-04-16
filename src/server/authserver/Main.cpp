@@ -74,27 +74,27 @@ extern int main(int argc, char **argv)
 {
     sLog->SetLogDB(false);
     // Command line parsing to get the configuration file name
-    char const* cfg_file = _AUTHSERVER_CONFIG;
-    int c = 1;
-    while(c < argc)
+    char const* configFile = _AUTHSERVER_CONFIG;
+    int count = 1;
+    while(count < argc)
     {
-        if (strcmp(argv[c], "-c") == 0)
+        if (strcmp(argv[count], "-c") == 0)
         {
-            if (++c >= argc)
+            if (++count >= argc)
             {
                 sLog->outError("Runtime-Error: -c option requires an input argument");
                 usage(argv[0]);
                 return 1;
             }
             else
-                cfg_file = argv[c];
+                configFile = argv[count];
         }
-        ++c;
+        ++count;
     }
 
-    if (!ConfigMgr::Load(cfg_file))
+    if (!ConfigMgr::Load(configFile))
     {
-        sLog->outError("Invalid or missing configuration file : %s", cfg_file);
+        sLog->outError("Invalid or missing configuration file : %s", configFile);
         sLog->outError("Verify that the file exists and has \'[authserver]\' written in the top of the file!");
         return 1;
     }
@@ -102,7 +102,7 @@ extern int main(int argc, char **argv)
 
     sLog->outString("%s (authserver)", _FULLVERSION);
     sLog->outString("<Ctrl-C> to stop.\n");
-    sLog->outString("Using configuration file %s.", cfg_file);
+    sLog->outString("Using configuration file %s.", configFile);
 
     sLog->outDetail("%s (Library: %s)", OPENSSL_VERSION_TEXT, SSLeay_version(SSLEAY_VERSION));
 
@@ -149,6 +149,11 @@ extern int main(int argc, char **argv)
     RealmAcceptor acceptor;
 
     uint16 rmport = ConfigMgr::GetIntDefault("RealmServerPort", 3724);
+    if (rmport < 0 || rmport > 0xFFFF)
+    {
+        sLog->outError("Specified port out of allowed range (1-65535)");
+    }
+
     std::string bind_ip = ConfigMgr::GetStringDefault("BindIP", "0.0.0.0");
 
     ACE_INET_Addr bind_addr(rmport, bind_ip.c_str());
@@ -180,21 +185,20 @@ extern int main(int argc, char **argv)
 
             if (GetProcessAffinityMask(hProcess, &appAff, &sysAff))
             {
-                ULONG_PTR curAff = Aff & appAff;            // remove non accessible processors
+                ULONG_PTR currentAffinity = Aff & appAff;            // remove non accessible processors
 
-                if (!curAff)
+                if (!currentAffinity)
                     sLog->outError("Processors marked in UseProcessors bitmask (hex) %x not accessible for authserver. Accessible processors bitmask (hex): %x", Aff, appAff);
-                else if (SetProcessAffinityMask(hProcess, curAff))
-                    sLog->outString("Using processors (bitmask, hex): %x", curAff);
+                else if (SetProcessAffinityMask(hProcess, currentAffinity))
+                    sLog->outString("Using processors (bitmask, hex): %x", currentAffinity);
                 else
-                    sLog->outError("Can't set used processors (hex): %x", curAff);
+                    sLog->outError("Can't set used processors (hex): %x", currentAffinity);
             }
-            sLog->outString();
         }
 
-        bool Prio = ConfigMgr::GetBoolDefault("ProcessPriority", false);
+        bool highPriority = ConfigMgr::GetBoolDefault("ProcessPriority", false);
 
-        if (Prio)
+        if (highPriority)
         {
             if (SetPriorityClass(hProcess, HIGH_PRIORITY_CLASS))
                 sLog->outString("The auth server process priority class has been set to HIGH");
