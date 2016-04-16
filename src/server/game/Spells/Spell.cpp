@@ -4018,6 +4018,21 @@ uint8 Spell::CanCast(bool strict)
                 }
                 break;
             }
+            case SPELL_EFFECT_APPLY_AURA:
+            {
+                switch (m_spellInfo->EffectApplyAuraName[i])
+                {
+                    case SPELL_AURA_BIND_SIGHT:
+                    {
+                        // Cannot bind sight across instances / continents.
+                        // Does not affect the same instance / continent, no matter the range.
+                        if (target == m_caster)
+                            return SPELL_FAILED_BAD_TARGETS;
+                        break;
+                    }
+                }
+                break;
+            }
             case SPELL_EFFECT_LEARN_SPELL:
             {
                 if (m_caster->GetTypeId() != TYPEID_PLAYER)
