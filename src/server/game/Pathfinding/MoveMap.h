@@ -100,11 +100,7 @@ namespace MMAP
         public:
             static MMapManager* createOrGetMMapManager();
             static void clear();
-            //static void preventPathfindingOnMaps(const char* ignoreMapIds);
-            //MMAP-Changes
-            static void implementPathFindingOnMaps(const char* implementMapIds);
-            //MMAP-Changes
-            static bool IsPathfindingEnabled(uint32 mapId);
+            static bool IsPathfindingEnabled();
     };
 }
 

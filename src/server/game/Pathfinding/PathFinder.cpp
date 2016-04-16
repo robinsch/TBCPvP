@@ -42,7 +42,7 @@ PathInfo::PathInfo(const Unit* owner, float destX, float destY, float destZ, boo
     //DEBUG_FILTER_LOG(LOG_FILTER_PATHFINDING, "++ PathInfo::PathInfo for %u \n", m_sourceUnit->GetGUIDLow());
 
     uint32 mapId = m_sourceUnit->GetMapId();
-    if (MMAP::MMapFactory::IsPathfindingEnabled(mapId))
+    if (MMAP::MMapFactory::IsPathfindingEnabled())
     {
         MMAP::MMapManager* mmap = MMAP::MMapFactory::createOrGetMMapManager();
         m_navMesh = mmap->GetNavMesh(mapId);
@@ -451,7 +451,7 @@ void PathInfo::BuildPointPath(const float *startPoint, const float *endPoint)
         // single point paths can be generated here
         // TODO : check the exact cases
         //DEBUG_FILTER_LOG(LOG_FILTER_PATHFINDING, "++ PathInfo::BuildPointPath FAILED! path sized %d returned\n", pointCount);
-        sLog->outError("++ PathInfo::BuildPointPath FAILED! path sized %d returned\n", pointCount);
+        sLog->outDebug("++ PathInfo::BuildPointPath FAILED! path sized %d returned\n", pointCount);
         BuildShortcut();
         m_type = PATHFIND_NOPATH;
         return;
