@@ -437,10 +437,11 @@ void PetAI::DoAttack(Unit *target, bool chase)
     // The following conditions are true if chase == true
     // (Follow && (Aggressive || Defensive))
     // ((Stay || Follow) && (Passive && player clicked attack))
+    bool canMelee = !(me->GetEntry() == 416 || me->GetEntry() == 510); // Imp and Water Elemental
 
     if (chase)
     {
-        if (me->Attack(target, true))
+        if (me->Attack(target, canMelee))
         {
             me->GetCharmInfo()->SetIsAtStay(false);
             me->GetCharmInfo()->SetIsFollowing(false);
