@@ -195,6 +195,14 @@ ProcessPriority = 1
 RealmsStateUpdateDelay = 20
 
 #
+#    MaxAuthChallenges
+#        Description: Number of login challenges before the socket will be disconnected.
+#        Default:     3  - (Enabled)
+#                     0 -  (Disabled)
+
+MaxAuthChallenges = 3
+
+#
 #    WrongPass.MaxCount
 #        Description: Number of login attemps with wrong password before the account or IP will be
 #                     banned.
