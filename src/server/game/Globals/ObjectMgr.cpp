@@ -3730,8 +3730,45 @@ void ObjectMgr::LoadPetCreateSpells()
     }
     while (result->NextRow());
 
+    result = WorldDatabase.Query("SELECT entry, Spell1, Spell2, Spell3, Spell4 FROM petcreateinfo_spell_instant");
+    if (!result)
+    {
+        sLog->outString();
+        sLog->outString(">> Loaded 0 pet create spells (instant mode)");
+        sLog->outErrorDb("petcreateinfo_spell_instant table is empty!");
+        return;
+    }
+
+    count = 0;
+
+    mPetCreateSpellInstant.clear();
+
+    do
+    {
+        Field *fields = result->Fetch();
+
+        uint32 creature_id = fields[0].GetUInt32();
+
+        if (!creature_id || !sCreatureStorage.LookupEntry<CreatureTemplate>(creature_id))
+            continue;
+
+        PetCreateSpellEntry PetCreateSpell;
+        for (int i = 0; i < 4; i++)
+        {
+            PetCreateSpell.spellid[i] = fields[i + 1].GetUInt32();
+
+            if (PetCreateSpell.spellid[i] && !sSpellStore.LookupEntry(PetCreateSpell.spellid[i]))
+                sLog->outErrorDb("Spell %u listed in petcreateinfo_spell does not exist", PetCreateSpell.spellid[i]);
+        }
+
+        mPetCreateSpellInstant[creature_id] = PetCreateSpell;
+
+        ++count;
+    }
+    while (result->NextRow());
+
     sLog->outString();
-    sLog->outString(">> Loaded %u pet create spells", count);
+    sLog->outString(">> Loaded %u pet create spells (instant mode)", count);
 }
 
 void ObjectMgr::LoadScripts(ScriptsType type)

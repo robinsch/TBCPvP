@@ -11923,7 +11923,7 @@ Pet* Unit::CreateTamedPetFrom(Creature* creatureTarget, uint32 spell_id)
 
     pet->GetCharmInfo()->SetPetNumber(sObjectMgr->GeneratePetNumber(), true);
     // this enables pet details window (Shift+P)
-    pet->InitPetCreateSpells();
+    pet->InitPetCreateSpells(false);
     pet->SetHealth(pet->GetMaxHealth());
 
     return pet;

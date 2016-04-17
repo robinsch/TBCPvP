@@ -208,7 +208,7 @@ class Pet : public Guardian
         TeachSpellMap   m_teachspells;
         AutoSpellList   m_autospells;
 
-        void InitPetCreateSpells();
+        void InitPetCreateSpells(bool instantMode);
         void CheckLearning(uint32 spellid);
         uint32 resetTalentsCost() const;
 

@@ -1716,13 +1716,18 @@ void Pet::removeSpell(uint16 spell_id)
     RemoveAurasDueToSpell(spell_id);
 }
 
-void Pet::InitPetCreateSpells()
+void Pet::InitPetCreateSpells(bool instantMode)
 {
     m_charmInfo->InitPetActionBar();
     m_spells.clear();
 
     int32 usedtrainpoints = 0, petspellid;
-    PetCreateSpellEntry const* CreateSpells = sObjectMgr->GetPetCreateSpellEntry(GetEntry());
+    PetCreateSpellEntry const* CreateSpells;
+    if (instantMode)
+        CreateSpells = sObjectMgr->GetPetCreateSpellInstantEntry(GetEntry());
+    else
+        sObjectMgr->GetPetCreateSpellEntry(GetEntry());
+
     if (CreateSpells)
     {
         Unit* owner = GetOwner();

@@ -701,6 +701,14 @@ class ObjectMgr
             return NULL;
         }
 
+        PetCreateSpellEntry const* GetPetCreateSpellInstantEntry(uint32 id) const
+        {
+            PetCreateSpellMap::const_iterator itr = mPetCreateSpellInstant.find(id);
+            if (itr != mPetCreateSpellInstant.end())
+                return &itr->second;
+            return NULL;
+        }
+
         void LoadGuilds();
         void LoadArenaTeams();
         void LoadGroups();
@@ -1075,6 +1083,7 @@ class ObjectMgr
         WeatherZoneMap      mWeatherZoneMap;
 
         PetCreateSpellMap   mPetCreateSpell;
+        PetCreateSpellMap   mPetCreateSpellInstant;
 
         //character reserved names
         typedef UNORDERED_SET<std::string> ReservedNamesMap;

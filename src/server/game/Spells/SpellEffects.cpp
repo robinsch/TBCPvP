@@ -4203,7 +4203,7 @@ void Spell::EffectSummonCritter(uint32 i)
     critter->SetUInt32Value(UNIT_NPC_FLAGS, critter->GetCreatureTemplate()->npcflag);
 
     critter->AIM_Initialize();
-    critter->InitPetCreateSpells();                         // e.g. disgusting oozeling has a create spell as critter...
+    critter->InitPetCreateSpells(false); // e.g. disgusting oozeling has a create spell as critter...
     critter->SelectLevel(critter->GetCreatureTemplate());
 
     // set timer for unsummon

@@ -1826,7 +1826,7 @@ Pet* Player::SummonPet(uint32 entry, float x, float y, float z, float ang, PetTy
     {
         case CLASS_PET:
         case SUMMON_PET:
-            pet->InitPetCreateSpells();
+            pet->InitPetCreateSpells(getCharacterMode() == CHARACTER_MODE_INSTANT);
             pet->SavePetToDB(PET_SAVE_AS_CURRENT);
             PetSpellInitialize();
             break;

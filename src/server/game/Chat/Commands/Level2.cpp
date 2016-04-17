@@ -3829,7 +3829,7 @@ bool ChatHandler::HandleCreatePetCommand(const char* /*args*/)
 
      pet->GetCharmInfo()->SetPetNumber(sObjectMgr->GeneratePetNumber(), true);
      // this enables pet details window (Shift+P)
-     pet->InitPetCreateSpells();
+     pet->InitPetCreateSpells(false);
      pet->SetHealth(pet->GetMaxHealth());
 
      pet->GetMap()->Add(pet->ToCreature());
