@@ -1694,6 +1694,8 @@ void Spell::SetTargetMap(uint32 i, uint32 cur)
                         AddUnitTarget(m_caster->GetMeleeHitRedirectTarget(target, m_spellInfo), i);
                     else if (m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MAGIC)
                         AddUnitTarget(SelectMagnetTarget(), i);
+                    else
+                        AddUnitTarget(target, i);
                     break;
                 case TARGET_UNIT_PARTY_TARGET:
                 case TARGET_UNIT_CLASS_TARGET:
