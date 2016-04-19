@@ -2358,8 +2358,12 @@ void Spell::cancel()
 
             m_caster->RemoveAurasByCasterSpell(m_spellInfo->Id, m_caster->GetGUID());
             SendChannelUpdate(0);
-            SendInterrupted(0);
-            SendCastResult(SPELL_FAILED_INTERRUPTED);
+
+            if (!IsChanneledSpell(m_spellInfo))
+            {
+                SendInterrupted(0);
+                SendCastResult(SPELL_FAILED_INTERRUPTED);
+            }
 
             // spell is canceled-take mods and clear list
             if (m_caster->GetTypeId() == TYPEID_PLAYER)
@@ -3386,9 +3390,6 @@ void Spell::SendChannelUpdate(uint32 time)
         m_caster->SetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT, 0);
         m_caster->SetUInt32Value(UNIT_CHANNEL_SPELL, 0);
     }
-
-    if (m_caster->GetTypeId() != TYPEID_PLAYER)
-        return;
 
     WorldPacket data(MSG_CHANNEL_UPDATE, 8+4);
     data << m_caster->GetPackGUID();
