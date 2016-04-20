@@ -5422,18 +5422,6 @@ void Spell::EffectDuel(uint32 i)
         return;
     }
 
-    if (caster->GetAreaId() == 72)
-    {
-        SendCastResult(SPELL_FAILED_NO_DUELING);
-        return;
-    }
-
-    if (target->GetAreaId() == 72)
-    {
-        SendCastResult(SPELL_FAILED_NO_DUELING);
-        return;
-    }
-
     //CREATE DUEL FLAG OBJECT
     GameObject* pGameObj = new GameObject;
 

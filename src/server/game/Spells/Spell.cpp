@@ -838,8 +838,7 @@ void Spell::AddUnitTarget(Unit* pVictim, uint32 effIndex)
     // Calculate hit result
     if (m_originalCaster)
     {
-        bool canMiss = (m_triggeredByAuraSpell || !m_IsTriggeredSpell || m_spellInfo->Id == 75);
-        target.missCondition = m_originalCaster->SpellHitResult(pVictim, m_spellInfo, m_canReflect, canMiss);
+        target.missCondition = m_originalCaster->SpellHitResult(pVictim, m_spellInfo, m_canReflect);
         if (m_skipCheck && target.missCondition != SPELL_MISS_IMMUNE)
             target.missCondition = SPELL_MISS_NONE;
     }
@@ -2275,10 +2274,10 @@ void Spell::prepare(SpellCastTargets * targets, Aura* triggeredByAura)
         SendSpellStart();
 
         if (m_caster->GetTypeId() == TYPEID_PLAYER)
+        {
             m_caster->ToPlayer()->AddGlobalCooldown(m_spellInfo, this);
 
-        if (m_caster->GetTypeId() == TYPEID_PLAYER)
-        {
+            // Send addon server side messages
             int32 castTime = 0;
             castTime =  IsChanneledSpell(m_spellInfo) ? -(GetSpellDuration(m_spellInfo)) : m_casttime;
 
@@ -2288,9 +2287,9 @@ void Spell::prepare(SpellCastTargets * targets, Aura* triggeredByAura)
             if (m_spellInfo->Id == 42292)
                 m_caster->ToPlayer()->SendGladdyNotification();
         }
-        if (!m_casttime && !m_spellInfo->StartRecoveryTime
-            && !m_castItemGUID     //item: first cast may destroy item and second cast causes crash
-            && GetCurrentContainer() == CURRENT_GENERIC_SPELL)
+
+        // item: first cast may destroy item and second cast causes crash
+        if (!m_casttime && !m_spellInfo->StartRecoveryTime && !m_castItemGUID && GetCurrentContainer() == CURRENT_GENERIC_SPELL)
             cast(true);
     }
 }
