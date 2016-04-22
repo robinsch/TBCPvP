@@ -24,6 +24,7 @@
 #include "Creature.h"
 #include "SharedDefines.h"
 #include "SpellAuras.h"
+#include "SpellMgr.h"
 
 /*#######################################
 ########                         ########
@@ -831,15 +832,18 @@ void Creature::UpdateDamagePhysical(WeaponAttackType attType)
 ########                         ########
 #######################################*/
 
-#define ENTRY_IMP               416
-#define ENTRY_VOIDWALKER        1860
-#define ENTRY_SUCCUBUS          1863
-#define ENTRY_FELHUNTER         417
-#define ENTRY_FELGUARD          17252
-#define ENTRY_WATER_ELEMENTAL   510
-#define ENTRY_TREANT            1964
-#define ENTRY_FIRE_ELEMENTAL    15438
-#define ENTRY_SHADOWFIEND       19668
+enum PetEntry
+{
+    ENTRY_IMP             = 416,
+    ENTRY_VOIDWALKER      = 1860,
+    ENTRY_SUCCUBUS        = 1863,
+    ENTRY_FELHUNTER       = 417,
+    ENTRY_FELGUARD        = 17252,
+    ENTRY_WATER_ELEMENTAL = 510,
+    ENTRY_TREANT          = 1964,
+    ENTRY_FIRE_ELEMENTAL  = 15438,
+    ENTRY_SHADOWFIEND     = 19668
+};
 
 bool Guardian::UpdateStats(Stats stat)
 {
@@ -853,17 +857,20 @@ bool Guardian::UpdateStats(Stats stat)
     Unit *owner = GetOwner();
     if (stat == STAT_STAMINA)
     {
-        // Warlock and Hunter pets gain 30% of owners stamina
         if (owner->getClass() == CLASS_WARLOCK && isPet() || isHunterPet())
+        {
             ownersBonus = CalculatePct(owner->GetStat(stat), 30);
             value += ownersBonus;
+        }
     }
     else if (stat == STAT_INTELLECT)
     {
         // Warlock and Mage pets gain 30% of owners intellect
         if (owner->getClass() == CLASS_WARLOCK || owner->getClass() == CLASS_MAGE)
+        {
             ownersBonus = CalculatePct(owner->GetStat(stat), 30);
             value += ownersBonus;
+        }
     }
 
     SetStat(stat, int32(value));
@@ -902,8 +909,7 @@ void Guardian::UpdateResistances(uint32 school)
     {
         float value = GetTotalAuraModValue(UnitMods(UNIT_MOD_RESISTANCE_START + school));
 
-        // hunter and warlock pets gain 40% of owner's resistance
-        if (isHunterPet() || isPet() && m_owner->getClass() == CLASS_WARLOCK)
+        if (isPet())
             value += float(CalculatePct(m_owner->GetResistance(SpellSchools(school)), 40));
 
         if (m_owner->HasAura(37386, 0))  // Void Star Talisman
@@ -922,7 +928,7 @@ void Guardian::UpdateArmor()
     UnitMods unitMod = UNIT_MOD_ARMOR;
 
     // hunter and warlock pets gain 35% of owner's armor value
-    if (isHunterPet() || isPet() && m_owner->getClass() == CLASS_WARLOCK)
+    if (isPet())
         bonus_armor = float(CalculatePct(m_owner->GetArmor(), 35));
 
     value  = GetModifierValue(unitMod, BASE_VALUE);
@@ -942,11 +948,11 @@ void Guardian::UpdateMaxHealth()
     float multiplicator = 10.0f;
     switch (GetEntry())
     {
-        case ENTRY_IMP:         multiplicator = 8.8f;   break;
-        case ENTRY_VOIDWALKER:  multiplicator = 11.5f;  break;
-        case ENTRY_SUCCUBUS:    multiplicator = 9.4f;   break;
-        case ENTRY_FELHUNTER:   multiplicator = 10.25f; break;
-        case ENTRY_FELGUARD:    multiplicator = 11.25f; break;
+        case ENTRY_IMP:         multiplicator = 8.4f;   break;
+        case ENTRY_VOIDWALKER:  multiplicator = 11.0f;  break;
+        case ENTRY_SUCCUBUS:    multiplicator = 9.1f;   break;
+        case ENTRY_FELHUNTER:   multiplicator = 9.5f; break;
+        case ENTRY_FELGUARD:    multiplicator = 11.0f; break;
         default:                multiplicator = 10.0f;  break;
     }
 
@@ -965,6 +971,16 @@ void Guardian::UpdateMaxPower(Powers power)
     float addValue = (power == POWER_MANA) ? GetStat(STAT_INTELLECT) - GetCreateStat(STAT_INTELLECT) : 0.0f;
 
     float multiplicator = 15.0f;
+
+    switch (GetEntry())
+    {
+        case ENTRY_IMP:         multiplicator = 4.95f;  break;
+        case ENTRY_VOIDWALKER:
+        case ENTRY_SUCCUBUS:
+        case ENTRY_FELHUNTER:
+        case ENTRY_FELGUARD:    multiplicator = 11.5f;  break;
+        default:                multiplicator = 15.0f;  break;
+    }
 
     float value = GetModifierValue(unitMod, BASE_VALUE) + GetCreatePowers(power);
     value *= GetModifierValue(unitMod, BASE_PCT);
@@ -1001,9 +1017,7 @@ void Guardian::UpdateAttackPowerAndDamage(bool ranged)
         {
             int32 fire   = int32(owner->GetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_POS + SPELL_SCHOOL_FIRE))   - owner->GetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_NEG + SPELL_SCHOOL_FIRE);
             int32 shadow = int32(owner->GetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_POS + SPELL_SCHOOL_SHADOW)) - owner->GetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_NEG + SPELL_SCHOOL_SHADOW);
-            int32 maximum  = (fire > shadow) ? fire : shadow;
-            if (maximum < 0)
-                maximum = 0;
+            int32 maximum  = std::max(fire, shadow);
             SetBonusDamage(int32(maximum * 0.15f));
             bonusAP = maximum * 0.57f;
         }
@@ -1011,8 +1025,6 @@ void Guardian::UpdateAttackPowerAndDamage(bool ranged)
         else if (isPet() && GetEntry() == ENTRY_WATER_ELEMENTAL && owner->getClass() == CLASS_MAGE)
         {
             int32 frost = int32(owner->GetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_POS + SPELL_SCHOOL_FROST)) - owner->GetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_NEG + SPELL_SCHOOL_FROST);
-            if (frost < 0)
-                frost = 0;
             SetBonusDamage(int32(frost * 0.4f));
         }
     }
@@ -1024,11 +1036,8 @@ void Guardian::UpdateAttackPowerAndDamage(bool ranged)
     float attPowerMod = GetModifierValue(unitMod, TOTAL_VALUE);
     float attPowerMultiplier = GetModifierValue(unitMod, TOTAL_PCT) - 1.0f;
 
-    //UNIT_FIELD_(RANGED)_ATTACK_POWER field
     SetInt32Value(UNIT_FIELD_ATTACK_POWER, (int32)base_attPower);
-    //UNIT_FIELD_(RANGED)_ATTACK_POWER_MODS field
     SetInt32Value(UNIT_FIELD_ATTACK_POWER_MODS, (int32)attPowerMod);
-    //UNIT_FIELD_(RANGED)_ATTACK_POWER_MULTIPLIER field
     SetFloatValue(UNIT_FIELD_ATTACK_POWER_MULTIPLIER, attPowerMultiplier);
 
     //automatically update weapon damage after attack power modification
