@@ -378,8 +378,6 @@ class Spell
         uint8 CheckPower();
         uint8 CheckCasterAuras() const;
 
-        int32 CalculateDamage(uint8 i, Unit* target) { return m_caster->CalculateSpellDamage(target, m_spellInfo, i, m_currentBasePoints[i]); }
-
         bool HaveTargetsForEffect(uint8 effect) const;
         void Delayed();
         void DelayedChannel();

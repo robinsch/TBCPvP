@@ -1056,7 +1056,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo *target)
 
     // All calculated do it!
     // Do healing and triggers
-    if (m_healing > 0)
+    if (m_healing)
     {
         bool crit = caster->isSpellCrit(unitTarget, m_spellInfo, m_spellSchoolMask);
         procEx |= PROC_EX_HEALING; // Healing Proc
@@ -1084,12 +1084,12 @@ void Spell::DoAllEffectOnTarget(TargetInfo *target)
                 bg->UpdatePlayerScore(caster->ToPlayer(), SCORE_HEALING_DONE, gain);
     }
     // Do damage and triggers
-    else if (m_damage > 0)
+    else if (m_damage)
     {
         // Fill base damage struct (unitTarget - is real spell target)
         SpellNonMeleeDamage damageInfo(caster, unitTarget, m_spellInfo->Id, m_spellSchoolMask);
 
-        caster->CalculateSpellDamageTaken(&damageInfo, m_damage, m_spellInfo, m_attackType);
+        caster->CalculateSpellDamage(&damageInfo, m_damage, m_spellInfo, m_attackType);
 
         // Send log damage message to client
         caster->SendSpellNonMeleeDamageLog(&damageInfo);
@@ -2515,7 +2515,8 @@ void Spell::cast(bool skipCheck)
             if (SpellEntry const *spellInfo = sSpellStore.LookupEntry(auraSpellInfo->EffectTriggerSpell[auraSpellIdx]))
             {
                 // Calculate chance at that moment (can be depend for example from combo points)
-                int32 chance = m_caster->CalculateSpellDamage(nullptr, auraSpellInfo, auraSpellIdx, (*i)->GetBasePoints());
+                int32 auraBasePoints = (*i)->GetBasePoints();
+                int32 chance = m_caster->CalculateSpellDamage(nullptr, auraSpellInfo, auraSpellIdx, &auraBasePoints);
                 m_ChanceTriggerSpells.push_back(std::make_pair(spellInfo, chance * (*i)->GetStackAmount()));
             }
         }
@@ -3680,7 +3681,7 @@ void Spell::HandleEffects(Unit *pUnitTarget, Item *pItemTarget, GameObject *pGOT
     sLog->outDebug("Spell: Effect : %u", eff);
 
     //we do not need DamageMultiplier here.
-    damage = CalculateDamage(i, NULL);
+    damage = int32(m_caster->CalculateSpellDamage(unitTarget, m_spellInfo, i, &m_currentBasePoints[i]));
 
     if (eff<TOTAL_SPELL_EFFECTS)
     {
@@ -4600,8 +4601,8 @@ uint8 Spell::CanCast(bool strict)
                 if (m_targets.getUnitTarget()->GetCharmerGUID())
                     return SPELL_FAILED_CHARMED;
 
-                if (int32(m_targets.getUnitTarget()->getLevel()) > CalculateDamage(i, m_targets.getUnitTarget()))
-                    return SPELL_FAILED_HIGHLEVEL;
+                /*if (int32(m_targets.getUnitTarget()->getLevel()) > m_caster->CalculateSpellDamage(m_targets.getUnitTarget(), m_spellInfo, i, &m_currentBasePoints[i]))
+                    return SPELL_FAILED_HIGHLEVEL;*/
 
                 break;
             }
