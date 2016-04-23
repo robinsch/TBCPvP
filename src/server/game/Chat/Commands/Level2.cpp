@@ -988,7 +988,7 @@ bool ChatHandler::HandleNpcAddCommand(const char* args)
         return false;
     }
 
-    creature->SaveToDB(map->GetId(), (1 << map->GetSpawnMode()), PHASEMASK_NORMAL);
+    creature->SaveToDB(map->GetId(), (1 << map->GetSpawnMode()), phaseMask);
 
     uint32 db_guid = creature->GetDBTableGUIDLow();
 
