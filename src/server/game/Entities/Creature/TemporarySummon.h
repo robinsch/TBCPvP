@@ -28,11 +28,11 @@ class TempSummon : public Creature
     public:
         explicit TempSummon(SummonPropertiesEntry const *properties, Unit *owner);
         virtual ~TempSummon(){};
-        void Update(uint32 time);
+        void Update(uint32 time) override;
         virtual void InitStats(uint32 lifetime);
         virtual void InitSummon();
         void UnSummon();
-        void RemoveFromWorld();
+        void RemoveFromWorld() override;
         void SetTempSummonType(TempSummonType type);
         void SaveToDB();
         Unit* GetSummoner() const;
@@ -49,10 +49,10 @@ class Minion : public TempSummon
 {
     public:
         Minion(SummonPropertiesEntry const *properties, Unit *owner);
-        void InitStats(uint32 duration);
-        void RemoveFromWorld();
+        void InitStats(uint32 duration) override;
+        void RemoveFromWorld() override;
         Unit *GetOwner() { return m_owner; }
-        float GetFollowAngle() const { return m_followAngle; }
+        float GetFollowAngle() const override { return m_followAngle; }
         void SetFollowAngle(float angle) { m_followAngle = angle; }
         bool IsGuardianPet() const;
     protected:
@@ -64,18 +64,18 @@ class Guardian : public Minion
 {
     public:
         Guardian(SummonPropertiesEntry const *properties, Unit *owner);
-        void InitStats(uint32 duration);
+        void InitStats(uint32 duration) override;
         bool InitStatsForLevel(uint32 level);
-        void InitSummon();
+        void InitSummon() override;
 
-        bool UpdateStats(Stats stat);
-        bool UpdateAllStats();
-        void UpdateResistances(uint32 school);
-        void UpdateArmor();
-        void UpdateMaxHealth();
-        void UpdateMaxPower(Powers power);
-        void UpdateAttackPowerAndDamage(bool ranged = false);
-        void UpdateDamagePhysical(WeaponAttackType attType);
+        bool UpdateStats(Stats stat) override;
+        bool UpdateAllStats() override;
+        void UpdateResistances(uint32 school) override;
+        void UpdateArmor() override;
+        void UpdateMaxHealth() override;
+        void UpdateMaxPower(Powers power) override;
+        void UpdateAttackPowerAndDamage(bool ranged = false) override;
+        void UpdateDamagePhysical(WeaponAttackType attType) override;
 
         int32 GetBonusDamage() { return m_bonusdamage; }
         void SetBonusDamage(int32 damage) { m_bonusdamage = damage; }
