@@ -219,7 +219,7 @@ pAuraHandler AuraHandler[TOTAL_AURAS]=
     &Aura::HandleAuraPowerBurn,                             //162 SPELL_AURA_POWER_BURN_MANA
     &Aura::HandleNoImmediateEffect,                         //163 SPELL_AURA_MOD_CRIT_DAMAGE_BONUS_MELEE
     &Aura::HandleUnused,                                    //164 useless, only one test spell
-    &Aura::HandleAuraAttackPowerAttacker,                   //165 SPELL_AURA_MELEE_ATTACK_POWER_ATTACKER_BONUS implemented in Unit::MeleeDamageBonusDone
+    &Aura::HandleNoImmediateEffect,                         //165 SPELL_AURA_MELEE_ATTACK_POWER_ATTACKER_BONUS implemented in Unit::MeleeDamageBonusDone
     &Aura::HandleAuraModAttackPowerPercent,                 //166 SPELL_AURA_MOD_ATTACK_POWER_PCT
     &Aura::HandleAuraModRangedAttackPowerPercent,           //167 SPELL_AURA_MOD_RANGED_ATTACK_POWER_PCT
     &Aura::HandleNoImmediateEffect,                         //168 SPELL_AURA_MOD_DAMAGE_DONE_VERSUS            implemented in Unit::SpellDamageBonusDone, Unit::MeleeDamageBonusDone
@@ -257,8 +257,8 @@ pAuraHandler AuraHandler[TOTAL_AURAS]=
     &Aura::HandleNoImmediateEffect,                         //200 SPELL_AURA_MOD_XP_PCT implemented in Player::GiveXP
     &Aura::HandleAuraAllowFlight,                           //201 SPELL_AURA_FLY                             this aura enable flight mode...
     &Aura::HandleNoImmediateEffect,                         //202 SPELL_AURA_CANNOT_BE_DODGED                implemented in Unit::RollPhysicalOutcomeAgainst
-    &Aura::HandleNoImmediateEffect,                         //203 SPELL_AURA_MOD_ATTACKER_MELEE_CRIT_DAMAGE  implemented in Unit::CalculateMeleeDamage and Unit::CalculateSpellDamage
-    &Aura::HandleNoImmediateEffect,                         //204 SPELL_AURA_MOD_ATTACKER_RANGED_CRIT_DAMAGE implemented in Unit::CalculateMeleeDamage and Unit::CalculateSpellDamage
+    &Aura::HandleNoImmediateEffect,                         //203 SPELL_AURA_MOD_ATTACKER_MELEE_CRIT_DAMAGE  implemented in Unit::CalculateMeleeDamage
+    &Aura::HandleNoImmediateEffect,                         //204 SPELL_AURA_MOD_ATTACKER_RANGED_CRIT_DAMAGE implemented in Unit::CalculateMeleeDamage
     &Aura::HandleNULL,                                      //205 vulnerable to school dmg?
     &Aura::HandleAuraModIncreaseFlightSpeed,                //206 SPELL_AURA_MOD_FLIGHT_SPEED
     &Aura::HandleAuraModIncreaseFlightSpeed,                //207 SPELL_AURA_MOD_FLIGHT_SPEED_MOUNTED
@@ -319,68 +319,52 @@ pAuraHandler AuraHandler[TOTAL_AURAS]=
 };
 
 Aura::Aura(SpellEntry const* spellproto, uint32 eff, int32 *currentBasePoints, Unit *target, Unit *caster, Item* castItem) :
-m_procCharges(0), m_stackAmount(1), m_isRemoved(false), m_spellmod(NULL), m_effIndex(eff), m_caster_guid(0), m_target(target),
-m_timeCla(1000), m_castItemGuid(castItem?castItem->GetGUID():0), m_auraSlot(MAX_AURAS),
-m_positive(false), m_permanent(false), m_isPeriodic(false), m_isAreaAura(false),
-m_isPersistent(false), m_removeMode(AURA_REMOVE_BY_DEFAULT), m_isRemovedOnShapeLost(true), m_in_use(false),
-m_periodicTimer(0), m_amplitude(0), m_PeriodicEventId(0), m_AuraDRGroup(DIMINISHING_NONE)
-, m_tickNumber(0)
+    m_procCharges(0), m_stackAmount(1), m_isRemoved(false), m_spellmod(NULL), m_effIndex(eff), m_caster_guid(0), m_target(target),
+    m_timeCla(1000), m_castItemGuid(castItem?castItem->GetGUID():0), m_auraSlot(MAX_AURAS),
+    m_positive(false), m_permanent(false), m_isPeriodic(false), m_isAreaAura(false),
+    m_isPersistent(false), m_removeMode(AURA_REMOVE_BY_DEFAULT), m_isRemovedOnShapeLost(true), m_in_use(false),
+    m_periodicTimer(0), m_amplitude(0), m_PeriodicEventId(0), m_AuraDRGroup(DIMINISHING_NONE),
+    m_tickNumber(0)
 {
     ASSERT(target);
-
     ASSERT(spellproto && spellproto == sSpellStore.LookupEntry(spellproto->Id) && "`info` must be pointer to sSpellStore element");
 
+    m_currentBasePoints = currentBasePoints ? *currentBasePoints : spellproto->EffectBasePoints[eff] + int32(spellproto->EffectBaseDice[eff]);
+
     m_spellProto = spellproto;
-
-    int32 damage;
-    if (currentBasePoints)
-    {
-        damage = *currentBasePoints;
-        m_currentBasePoints = damage - 1;
-    }
-    else
-    {
-        m_currentBasePoints = m_spellProto->EffectBasePoints[eff];
-        if (caster)
-            damage = caster->CalculateSpellDamage(target, m_spellProto, m_effIndex, m_currentBasePoints);
-        else
-            damage = m_currentBasePoints + 1;
-    }
-
     m_isPassive = IsPassiveSpell(GetId());
     m_positive = IsPositiveEffect(GetId(), m_effIndex);
-
     m_applyTime = time(NULL);
 
-    m_isSingleTargetAura = IsSingleTargetSpell(m_spellProto);
-
+    int32 damage;
     if (!caster)
     {
+        damage = m_currentBasePoints;
         m_caster_guid = target->GetGUID();
-        //damage = m_currentBasePoints+1;                     // stored value-1
         m_maxduration = target->CalculateSpellDuration(m_spellProto, m_effIndex, target);
     }
     else
     {
+        damage = m_currentBasePoints;
         m_caster_guid = caster->GetGUID();
-
-        //damage        = caster->CalculateSpellDamage(m_spellProto, m_effIndex, m_currentBasePoints, target);
         m_maxduration = caster->CalculateSpellDuration(m_spellProto, m_effIndex, target);
 
         if (!damage && castItem && castItem->GetItemSuffixFactor())
         {
-            ItemRandomSuffixEntry const *item_rand_suffix = sItemRandomSuffixStore.LookupEntry(abs(castItem->GetItemRandomPropertyId()));
+            ItemRandomSuffixEntry const* item_rand_suffix = sItemRandomSuffixStore.LookupEntry(abs(castItem->GetItemRandomPropertyId()));
             if (item_rand_suffix)
             {
-                for (int k = 0; k < 3; k++)
+                for (int k = 0; k < 3; ++k)
                 {
-                    SpellItemEnchantmentEntry const *pEnchant = sSpellItemEnchantmentStore.LookupEntry(item_rand_suffix->enchant_id[k]);
+                    SpellItemEnchantmentEntry const* pEnchant = sSpellItemEnchantmentStore.LookupEntry(item_rand_suffix->enchant_id[k]);
                     if (pEnchant)
                     {
-                        for (int t = 0; t < 3; t++)
-                            if (pEnchant->spellid[t] == m_spellProto->Id)
+                        for (int t = 0; t < 3; ++t)
                         {
-                            damage = uint32((item_rand_suffix->prefix[k]*castItem->GetItemSuffixFactor()) / 10000);
+                            if (pEnchant->spellid[t] != spellproto->Id)
+                                continue;
+
+                            damage = uint32((item_rand_suffix->prefix[k] * castItem->GetItemSuffixFactor()) / 10000);
                             break;
                         }
                     }
@@ -392,24 +376,15 @@ m_periodicTimer(0), m_amplitude(0), m_PeriodicEventId(0), m_AuraDRGroup(DIMINISH
         }
     }
 
+    SetModifier(AuraType(spellproto->EffectApplyAuraName[eff]), damage, spellproto->EffectAmplitude[eff], spellproto->EffectMiscValue[eff]);
+
+    Player* modOwner = caster ? caster->GetSpellModOwner() : nullptr;
+
     if (m_maxduration == -1 || m_isPassive && m_spellProto->DurationIndex == 0)
         m_permanent = true;
 
-    Player* modOwner = caster ? caster->GetSpellModOwner() : NULL;
-
-    if (!m_permanent && modOwner)
-        modOwner->ApplySpellMod(GetId(), SPELLMOD_DURATION, m_maxduration);
-
     m_duration = m_maxduration;
-
-    if (modOwner)
-        modOwner->ApplySpellMod(GetId(), SPELLMOD_ACTIVATION_TIME, m_periodicTimer);
-
-    sLog->outDebug("Aura: construct Spellid : %u, Aura : %u Duration : %d Target : %d Damage : %d", m_spellProto->Id, m_spellProto->EffectApplyAuraName[eff], m_maxduration, m_spellProto->EffectImplicitTargetA[eff], damage);
-
     m_effIndex = eff;
-    SetModifier(AuraType(m_spellProto->EffectApplyAuraName[eff]), damage, m_spellProto->EffectAmplitude[eff], m_spellProto->EffectMiscValue[eff]);
-
     m_isDeathPersist = IsDeathPersistentSpell(m_spellProto);
 
     if (m_spellProto->procCharges)
@@ -432,6 +407,14 @@ m_periodicTimer(0), m_amplitude(0), m_PeriodicEventId(0), m_AuraDRGroup(DIMINISH
     //  WeakenedSoul       Sweeping Strikes
     if (GetId() == 6788 || GetId() == 12328)
         m_isRemovedOnShapeLost = false;
+
+    // Apply periodic time mod
+    if (modOwner && m_modifier.periodictime)
+        modOwner->ApplySpellMod(spellproto->Id, SPELLMOD_ACTIVATION_TIME, m_modifier.periodictime);
+
+    // Start periodic on next tick or at aura apply
+    if (!(spellproto->AttributesEx5 & SPELL_ATTR_EX5_START_PERIODIC_AT_APPLY))
+        m_periodicTimer = m_modifier.periodictime;
 }
 
 Aura::~Aura()
@@ -2736,7 +2719,7 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
                             if (itr->second->state == PLAYERSPELL_REMOVED) continue;
                             SpellEntry const *spellInfo = sSpellStore.LookupEntry(itr->first);
                             if (spellInfo && spellInfo->SpellFamilyName == SPELLFAMILY_WARRIOR && spellInfo->SpellIconID == 139)
-                                Rage_val += m_target->CalculateSpellDamage(m_target, spellInfo, 0, spellInfo->EffectBasePoints[0]) * 10;
+                                Rage_val += m_target->CalculateSpellDamage(m_target, spellInfo, 0, &spellInfo->EffectBasePoints[0]) * 10;
                         }
                     }
 
@@ -3992,15 +3975,6 @@ void Aura::HandleAuraProcTriggerSpell(bool apply, bool Real)
             default: break;
         }
     }
-    if (GetId() == 37386) // Void Star Talisman Trinket Pet effect
-    {
-        Guardian* pet = m_target->ToPlayer()->GetGuardianPet();
-        if (pet)
-        {
-            for(int8 i = SPELL_SCHOOL_NORMAL; i < MAX_SPELL_SCHOOL; i++)
-                pet->UpdateResistances(i);
-        }
-    }
 }
 
 void Aura::HandleAuraModStalked(bool apply, bool Real)
@@ -4975,37 +4949,6 @@ void Aura::HandleAuraModRangedAttackPower(bool apply, bool /*Real*/)
     m_target->HandleStatModifier(UNIT_MOD_ATTACK_POWER_RANGED, TOTAL_VALUE, float(GetModifierValue()), apply);
 }
 
-void Aura::HandleAuraAttackPowerAttacker(bool apply, bool Real)
-{
-	// spells required only Real aura add/remove
-	if (!Real)
-	    return;
-	Unit *caster = GetCaster();
-	
-	if (!caster)
-	    return;
-	
-	// Hunter's Mark
-	if (m_spellProto->SpellFamilyName == SPELLFAMILY_HUNTER && m_spellProto->SpellFamilyFlags & 0x0000000000000400LL)
-	{
-	    // Check Improved Hunter's Mark bonus on caster
-	    Unit::AuraList const& mOverrideClassScript = caster->GetAurasByType(SPELL_AURA_OVERRIDE_CLASS_SCRIPTS);
-	    for(Unit::AuraList::const_iterator i = mOverrideClassScript.begin(); i != mOverrideClassScript.end(); ++i)
-	    {
-	        Modifier* mod = (*i)->GetModifier();
-	        // improved Hunter's Mark script from 5236 to 5240
-	        if (mod->m_miscvalue >= 5236 && mod->m_miscvalue <= 5240)
-	        {
-	            int32 ranged_bonus = caster->CalculateSpellDamage(m_target, m_spellProto, 1, m_spellProto->EffectBasePoints[1]);
-	            m_modifier.m_amount = mod->m_amount * ranged_bonus / 100;
-	            m_currentBasePoints = m_modifier.m_amount;
-	            break;
-	        }
-	    }
-	    return;
-	}
-}
-
 void Aura::HandleAuraModAttackPowerPercent(bool apply, bool /*Real*/)
 {
     //UNIT_FIELD_ATTACK_POWER_MULTIPLIER = multiplier - 1
@@ -5725,7 +5668,7 @@ void Aura::PeriodicTick()
                     {
                         uint32 percent =
                             GetEffIndex() < 2 && spellProto->Effect[GetEffIndex()] == SPELL_EFFECT_DUMMY ?
-                            pCaster->CalculateSpellDamage(target, spellProto, GetEffIndex()+1, spellProto->EffectBasePoints[GetEffIndex()+1]) :
+                            pCaster->CalculateSpellDamage(target, spellProto, SpellEffectIndex(GetEffIndex() + 1)) :
                             100;
                         if (target->GetHealth() * 100 >= target->GetMaxHealth() * percent )
                         {
@@ -6153,20 +6096,6 @@ void Aura::PeriodicTick()
                 }
             }
 
-            // Mana Feed
-            int32 manaFeedVal = 0;
-            Unit::AuraList const& mAddFlatModifier = pCaster->GetAurasByType(SPELL_AURA_ADD_FLAT_MODIFIER);
-            for (Unit::AuraList::const_iterator i = mAddFlatModifier.begin(); i != mAddFlatModifier.end(); ++i)
-            {
-                if ((*i)->GetModifier()->m_miscvalue == SPELLMOD_EFFECT2 && (*i)->GetSpellProto()->SpellIconID == 1982)
-                {
-                    int32 value2 = pCaster->CalculateSpellDamage(pCaster, (*i)->GetSpellProto(), 0, (*i)->GetSpellProto()->EffectBasePoints[0]);
-                    manaFeedVal = value2 * gain_amount / 100;
-                }
-            }
-            if (manaFeedVal > 0)
-                pCaster->CastCustomSpell(pCaster, 32553, &manaFeedVal, NULL, NULL, true, NULL);
-
             target->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_DAMAGE, m_spellProto ? m_spellProto->Id : 0);
             break;
         }
@@ -6259,7 +6188,7 @@ void Aura::PeriodicTick()
             //maybe has to be sent different to client, but not by SMSG_PERIODICAURALOG
             SpellNonMeleeDamage damageInfo(pCaster, target, spellProto->Id, spellProto->SchoolMask);
             //no SpellDamageBonus for burn mana
-            pCaster->CalculateSpellDamageTaken(&damageInfo, gain, spellProto);
+            pCaster->CalculateSpellDamage(&damageInfo, gain, spellProto);
             pCaster->SendSpellNonMeleeDamageLog(&damageInfo);
 
             // Set trigger flag
@@ -6409,9 +6338,9 @@ void Aura::PeriodicDummyTick()
             // Regen amount is max (100% from spell) on 21% or less mana and min on 92.5% or greater mana (20% from spell)
             int mana = m_target->GetPower(POWER_MANA);
             int max_mana = m_target->GetMaxPower(POWER_MANA);
-            int32 base_regen = caster->CalculateSpellDamage( m_target, m_spellProto, m_effIndex, m_currentBasePoints);
+            int32 base_regen = caster->CalculateSpellDamage( m_target, m_spellProto, m_effIndex, &m_currentBasePoints);
             float regen_pct = 1.20f - 1.1f * mana / max_mana;
-            if      (regen_pct > 1.0f) regen_pct = 1.0f;
+            if (regen_pct > 1.0f) regen_pct = 1.0f;
             else if (regen_pct < 0.2f) regen_pct = 0.2f;
             m_modifier.m_amount = int32 (base_regen * regen_pct);
             m_target->ToPlayer()->UpdateManaRegen();
