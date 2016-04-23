@@ -847,11 +847,12 @@ enum PetEntry
 
 bool Guardian::UpdateStats(Stats stat)
 {
-    if (stat > STAT_SPIRIT)
+    if (stat >= MAX_STATS)
         return false;
 
     // value = ((base_value * base_pct) + total_value) * total_pct
     float value = GetTotalStatValue(stat);
+    ApplyStatBuffMod(stat, m_statFromOwner[stat], false);
     float ownersBonus = 0.0f;
 
     Unit *owner = GetOwner();
@@ -868,12 +869,18 @@ bool Guardian::UpdateStats(Stats stat)
         // Warlock and Mage pets gain 30% of owners intellect
         if (owner->getClass() == CLASS_WARLOCK || owner->getClass() == CLASS_MAGE)
         {
+            // TOTAL_PCT should be applied after ownersBonus
+            UnitMods unitMod = UnitMods(UNIT_MOD_STAT_START + stat);
+            value *= (1.0f / m_auraModifiersGroup[unitMod][TOTAL_PCT]) ;
             ownersBonus = CalculatePct(owner->GetStat(stat), 30);
             value += ownersBonus;
+            value *= m_auraModifiersGroup[unitMod][TOTAL_PCT];
         }
     }
 
     SetStat(stat, int32(value));
+    m_statFromOwner[stat] = ownersBonus;
+    ApplyStatBuffMod(stat, m_statFromOwner[stat], true);
 
     switch (stat)
     {

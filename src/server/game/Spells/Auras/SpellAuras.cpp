@@ -4403,22 +4403,15 @@ void Aura::HandleAuraModStat(bool apply, bool /*Real*/)
         return;
     }
 
-    if (apply && GetId() == 20007) // Crusader enchant proc: Holy Strength
-    {
-        uint32 lvldiff = m_target->getLevel() - 60;
-        uint32 diff = lvldiff > 0 ? lvldiff*4 : 0;
-        m_modifier.m_amount = GetModifierValue() - diff;
-    }
-
     for (int32 i = STAT_STRENGTH; i < MAX_STATS; i++)
     {
         // -1 or -2 is all stats (misc < -2 checked in function beginning)
-        if (m_modifier.m_miscvalue < 0 || m_modifier.m_miscvalue == i)
+        if (GetMiscValue() < 0 || GetMiscValue() == i)
         {
             //m_target->ApplyStatMod(Stats(i), m_modifier.m_amount, apply);
             m_target->HandleStatModifier(UnitMods(UNIT_MOD_STAT_START + i), TOTAL_VALUE, float(GetModifierValue()), apply);
             if (m_target->GetTypeId() == TYPEID_PLAYER || m_target->ToCreature()->isPet())
-                m_target->ApplyStatBuffMod(Stats(i), GetModifierValue(), apply);
+                m_target->ApplyStatBuffMod(Stats(i), (float)GetModifierValue(), apply);
         }
     }
 }
@@ -6585,14 +6578,8 @@ void Aura::UnregisterSingleCastAura()
     if (IsSingleTarget())
     {
         if (Unit* caster = GetCaster())
-        {
             caster->GetSingleCastAuras().remove(this);
-        }
-        else
-        {
-            sLog->outError("Couldn't find the caster of the single target aura, may crash later!");
-            ASSERT(false);
-        }
+
         m_isSingleTargetAura = false;
     }
 }

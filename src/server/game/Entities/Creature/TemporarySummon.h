@@ -81,6 +81,7 @@ class Guardian : public Minion
         void SetBonusDamage(int32 damage) { m_bonusdamage = damage; }
     protected:
         int32   m_bonusdamage;
+        float   m_statFromOwner[MAX_STATS];
 };
 
 class Puppet : public Minion
