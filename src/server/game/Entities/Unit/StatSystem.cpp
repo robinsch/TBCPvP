@@ -860,8 +860,12 @@ bool Guardian::UpdateStats(Stats stat)
     {
         if (owner->getClass() == CLASS_WARLOCK && isPet() || isHunterPet())
         {
+            // TOTAL_PCT should be applied after ownersBonus
+            UnitMods unitMod = UnitMods(UNIT_MOD_STAT_START + stat);
+            value *= (1.0f / m_auraModifiersGroup[unitMod][TOTAL_PCT]) ;
             ownersBonus = CalculatePct(owner->GetStat(stat), 30);
             value += ownersBonus;
+            value *= m_auraModifiersGroup[unitMod][TOTAL_PCT];
         }
     }
     else if (stat == STAT_INTELLECT)
