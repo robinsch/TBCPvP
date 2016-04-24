@@ -523,7 +523,7 @@ void CreatureEventAI::ProcessAction(CreatureEventAI_Action const& action, uint32
                     return;
             }
 
-            if (canCast)
+            if (canCast && !caster->ToCreature()->HasSpellCooldown(action.cast.spellId))
             {
                 const SpellEntry* tSpell = GetSpellStore()->LookupEntry(action.cast.spellId);
 

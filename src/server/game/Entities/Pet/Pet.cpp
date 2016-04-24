@@ -2100,37 +2100,27 @@ void Pet::CastPetAura(PetAura const* aura)
         CastSpell(this, auraId, true);
 }
 
-void Pet::ProhibitSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs)
+void Pet::LockSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs)
 {
     if (!GetOwner() || GetOwner()->GetTypeId() != TYPEID_PLAYER)
         return;
 
-    WorldPacket data(SMSG_SPELL_COOLDOWN, 8+1+m_spells.size()*8);
+    WorldPacket data(SMSG_SPELL_COOLDOWN, 8 + 1 + m_spells.size() * 8);
     data << uint64(GetGUID());
     data << uint8(0x0);                                     // flags (0x1, 0x2)
-    time_t curTime = time(NULL);
 
+    time_t curTime = time(nullptr);
     for (PetSpellMap::const_iterator itr = m_spells.begin(); itr != m_spells.end(); ++itr)
     {
         uint32 unSpellId = itr->first;
         SpellEntry const *spellInfo = sSpellStore.LookupEntry(unSpellId);
-        if (!spellInfo)
-        {
-            ASSERT(spellInfo);
-            continue;
-        }
+        ASSERT(spellInfo);
 
-        // Not send cooldown for this spells
-        if (spellInfo->Attributes & SPELL_ATTR_DISABLED_WHILE_ACTIVE)
-            continue;
-        if (spellInfo->PreventionType != SPELL_PREVENTION_TYPE_SILENCE)
-            continue;
-
-        if ((idSchoolMask & GetSpellSchoolMask(spellInfo)) && GetSpellCooldownDelay(unSpellId) < unTimeMs)
+        if ((idSchoolMask & GetSpellSchoolMask(spellInfo)) && GetCreatureSpellCooldownDelay(unSpellId) < unTimeMs)
         {
-            data << unSpellId;
-            data << unTimeMs;                               // in m.secs
-            _AddCreatureSpellCooldown(unSpellId,curTime + unTimeMs/1000);
+            data << uint32(unSpellId);
+            data << uint32(unTimeMs);
+            _AddCreatureSpellCooldown(unSpellId,curTime + unTimeMs / IN_MILLISECONDS); /// @todo: robinsch: std::chrono
         }
     }
 

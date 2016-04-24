@@ -2037,6 +2037,13 @@ bool Creature::HasCategoryCooldown(uint32 spell_id) const
     return(itr != m_CreatureCategoryCooldowns.end() && time_t(itr->second + (spellInfo->CategoryRecoveryTime / IN_MILLISECONDS)) > time(NULL));
 }
 
+uint32 Creature::GetCreatureSpellCooldownDelay(uint32 spellId) const
+{
+    CreatureSpellCooldowns::const_iterator itr = m_CreatureSpellCooldowns.find(spellId);
+    time_t t = time(nullptr);
+    return uint32(itr != m_CreatureSpellCooldowns.end() && itr->second > t ? itr->second - t : 0);
+}
+
 bool Creature::HasSpellCooldown(uint32 spell_id) const
 {
     CreatureSpellCooldowns::const_iterator itr = m_CreatureSpellCooldowns.find(spell_id);
@@ -2285,4 +2292,21 @@ void Creature::HandleDelayedDeath(uint32 deathDelay)
     // only set deathDelayTimer if we don't have already one set
     if (!m_deathDelayTimer)
         m_deathDelayTimer = deathDelay;
+}
+
+void Creature::LockSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs)
+{
+    time_t curTime = time(nullptr);
+    for (uint8 i = 0; i < CREATURE_MAX_SPELLS; ++i)
+    {
+        if (!m_spells[i])
+            continue;
+
+        uint32 unSpellId = m_spells[i];
+        SpellEntry const* spellInfo = sSpellStore.LookupEntry(unSpellId);
+        ASSERT(spellInfo);
+
+        if ((idSchoolMask & GetSpellSchoolMask(spellInfo)) && GetCreatureSpellCooldownDelay(unSpellId) < unTimeMs)
+            _AddCreatureSpellCooldown(unSpellId, curTime + unTimeMs / IN_MILLISECONDS);
+    }
 }

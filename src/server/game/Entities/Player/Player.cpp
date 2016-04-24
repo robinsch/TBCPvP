@@ -19151,7 +19151,7 @@ void Player::ContinueTaxiFlight()
     GetSession()->SendDoFlight(mountDisplayId, path, startNode);
 }
 
-void Player::ProhibitSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs)
+void Player::LockSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs)
 {
                                                             // last check 2.0.10
     WorldPacket data(SMSG_SPELL_COOLDOWN, 8+1+m_spells.size()*8);
@@ -22598,3 +22598,50 @@ void Player::SetSpecName(uint8 spec, const char* specName)
     CharacterDatabase.PExecute("INSERT INTO character_talent_name (guid,spec,name) VALUES ('%u', '%u', '%s')", GetGUIDLow(), spec, specName);
 }
 
+void Player::learnHigherTalentRanks(uint32 spellEntry)
+{
+    if (getCharacterMode() != CHARACTER_MODE_INSTANT)
+        return;
+
+    // robinsch: There is no general code for it because spellMaxLevel, spellLevel, spellMinLevel are all fucked up
+    // move this to database? nah
+
+    switch (spellEntry)
+    {
+        // Warrior
+        case 12294: learnSpell(21552); break; // Mortal Strike (Rank 1) -> Rank 3
+        case 23881: learnSpell(23893); break; // Bloodthirst (Rank 1) -> Rank 3
+        case 23922: learnSpell(23924); break; // Shield Slam (Rank 1) -> Rank 3
+        // Paladin
+        case 20473: learnSpell(20930); break; // Holy Shock (Rank 1) -> Rank 3
+        case 20911: learnSpell(20913); break; // Blessing of Sanctuary (Rank 1) -> Rank 3
+        case 20925: learnSpell(20927); break; // Holy Shield (Rank 1) -> Rank 2
+        case 20375: learnSpell(20919); break; // Seal of Command (Rank 1) -> Rank 4
+        // Hunter
+        case 19434: learnSpell(20903); break; // Aimed Shot (Rank 1) -> Rank 5
+        case 19506: learnSpell(20905); break; // Trueshot Aura (Rank 1) -> Rank 2
+        case 19306: learnSpell(20910); break; // Counterattack (Rank 1) -> Rank 3
+        case 19386: learnSpell(24132); break; // Wyvern Sting (Rank 1) -> Rank 2
+        // Rogue
+        case 1329:  learnSpell(34411); break; // Mutilate (Rank 1) -> Rank 2
+        case 16511: learnSpell(17348); break; // Hemorrhage (Rank 1) -> Rank 3
+        // Priest
+        case 14752: learnSpell(14819); break; // Divine Spirit (Rank 1) -> Rank 3
+        case 15237: learnSpell(27800); break; // Holy Nova (Rank 1) -> Rank 5
+        case 724:   learnSpell(27870); break; // Lightwell (Rank 1) -> Rank 2
+        case 34861: learnSpell(34863); break; // Circle of Healing (Rank 1) -> Rank 2
+        case 15407: learnSpell(17314); break; // Mind Flay (Rank 1) -> Rank 5
+        // Mage
+        case 11366: learnSpell(12526); break; // Pyroblast (Rank 1) -> Rank 7
+        case 11113: learnSpell(13020); break; // Blast Wave (Rank 1) -> Rank 4
+        case 31661: learnSpell(33041); break; // Dragon's Breath (Rank 1) -> Rank 2
+        case 11426: learnSpell(13033); break; // Ice Barrier (Rank 1) -> Rank 4
+        // Warlock
+        case 18265: learnSpell(18881); break; // Siphon Life (Rank 1) -> Rank 4
+        case 18220: learnSpell(18937); break; // Dark Pact (Rank 1) -> Rank 2
+        case 17877: learnSpell(18871); break; // Shadowburn (Rank 1) -> Rank 6
+        case 17962: learnSpell(18931); break; // Conflagrate (Rank 1) -> Rank 3
+        default:
+            break;
+    }
+}

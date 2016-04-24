@@ -4538,9 +4538,7 @@ void Spell::EffectHealMaxHealth(uint32 /*i*/)
 
 void Spell::EffectInterruptCast(uint32 eff)
 {
-    if (!unitTarget)
-        return;
-    if (!unitTarget->isAlive())
+    if (!unitTarget || !unitTarget->isAlive())
         return;
 
     // TODO: not all spells that used this effect apply cooldown at school spells
@@ -4560,7 +4558,7 @@ void Spell::EffectInterruptCast(uint32 eff)
                 if (m_originalCaster)
                 {
                     int32 duration = m_originalCaster->CalculateSpellDuration(m_spellInfo, eff, unitTarget);
-                    unitTarget->ProhibitSpellSchool(GetSpellSchoolMask(curSpellInfo), duration/*GetSpellDuration(m_spellInfo)*/);
+                    unitTarget->LockSpellSchool(GetSpellSchoolMask(curSpellInfo), duration);
                 }
                 unitTarget->InterruptSpell(CurrentSpellTypes(i), false);
             }

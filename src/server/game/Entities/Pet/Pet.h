@@ -248,14 +248,7 @@ class Pet : public Guardian
 
         Player *GetOwner() { return m_owner; }
 
-        // pets are also interruptable
-        uint32 GetSpellCooldownDelay(uint32 spell_id) const
-        {
-            CreatureSpellCooldowns::const_iterator itr = m_CreatureSpellCooldowns.find(spell_id);
-            time_t t = time(NULL);
-            return itr != m_CreatureSpellCooldowns.end() && itr->second > t ? itr->second - t : 0;
-        }
-        void ProhibitSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs);
+        void LockSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs) override;
 
     protected:
         Player *m_owner;

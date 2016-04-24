@@ -304,6 +304,10 @@ bool ScriptedAI::CanCast(Unit* pTarget, SpellEntry const* pSpell, bool bTriggere
     if (!bTriggered && me->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SILENCED))
         return false;
 
+    // Check for cooldown
+    if (!bTriggered && me->HasSpellCooldown(pSpell->Id))
+        return false;
+
     //Check for power
     if (!bTriggered && me->GetPower((Powers)pSpell->powerType) < pSpell->manaCost)
         return false;
