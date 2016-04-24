@@ -3509,6 +3509,8 @@ DiminishingGroup GetDiminishingReturnsGroupForSpell(SpellEntry const* spellproto
             return DIMINISHING_KNOCKOUT;
         else if (spellproto->Mechanic == MECHANIC_BANISH  || spellproto->EffectMechanic[i] == MECHANIC_BANISH)
             return DIMINISHING_BANISH;
+        else if (spellproto->Mechanic == MECHANIC_POLYMORPH || spellproto->EffectMechanic[i] == MECHANIC_POLYMORPH)
+            return DIMINISHING_POLYMORPH;
     }
 
     return DIMINISHING_NONE;
