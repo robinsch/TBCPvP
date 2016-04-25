@@ -118,7 +118,7 @@ void CasterAI::EnterCombat(Unit *who)
     if (spells.empty())
         return;
 
-    uint32 spell = rand()%spells.size();
+    uint32 spell = rand() % spells.size();
     uint32 count = 0;
     for (SpellVct::iterator itr = spells.begin(); itr != spells.end(); ++itr, ++count)
     {

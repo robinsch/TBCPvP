@@ -2603,6 +2603,76 @@ void Spell::EffectPowerBurn(uint32 i)
 
 void Spell::EffectHeal(uint32 /*i*/)
 {
+    if (unitTarget && unitTarget->isAlive() && damage >= 0)
+    {
+        // Try to get original caster
+        Unit *caster = m_originalCasterGUID ? m_originalCaster : m_caster;
+
+        // Skip if m_originalCaster not available
+        if (!caster)
+            return;
+
+        int32 addhealth = damage;
+
+        // Vessel of the Naaru (Vial of the Sunwell trinket)
+        if (m_spellInfo->Id == 45064)
+        {
+            // Amount of heal - depends from stacked Holy Energy
+            int damageAmount = 0;
+            Unit::AuraList const& mDummyAuras = m_caster->GetAurasByType(SPELL_AURA_DUMMY);
+            for (Unit::AuraList::const_iterator i = mDummyAuras.begin();i != mDummyAuras.end(); ++i)
+            {
+                if ((*i)->GetId() == 45062)
+                {
+                    damageAmount += (*i)->GetModifierValue();
+                    m_caster->RemoveAurasDueToSpell(45062);
+                }
+            }
+            
+            addhealth += damageAmount;
+        }
+        // Swiftmend - consumes Regrowth or Rejuvenation
+        else if (m_spellInfo->TargetAuraState == AURA_STATE_SWIFTMEND && unitTarget->HasAuraState(AURA_STATE_SWIFTMEND))
+        {
+            Unit::AuraList const& RejorRegr = unitTarget->GetAurasByType(SPELL_AURA_PERIODIC_HEAL);
+            // find most short by duration
+            Aura *targetAura = nullptr;
+            for (Unit::AuraList::const_iterator i = RejorRegr.begin(); i != RejorRegr.end(); ++i)
+            {
+                if ((*i)->GetSpellProto()->SpellFamilyName == SPELLFAMILY_DRUID
+                    && (*i)->GetSpellProto()->SpellFamilyFlags & 0x50)
+                {
+                    if (!targetAura || (*i)->GetAuraDuration() < targetAura->GetAuraDuration())
+                        targetAura = *i;
+                }
+            }
+
+            if (!targetAura)
+            {
+                sLog->outError("Target(GUID:" UI64FMTD ") has aurastate AURA_STATE_SWIFTMEND but no matching aura.", unitTarget->GetGUID());
+                return;
+            }
+
+            int32 tickHeal = targetAura->GetModifierValuePerStack() > 0 ? targetAura->GetModifierValuePerStack() : 0;
+            if (Player* modOwner = caster->GetSpellModOwner())
+                modOwner->ApplySpellMod(targetAura->GetSpellProto()->Id, SPELLMOD_DOT, tickHeal);
+
+            int32 tickCount = 0;
+            if (targetAura->GetSpellProto()->SpellFamilyFlags & 0x10) // Rejuvenation
+                tickCount = 4;
+            else // Regrowth
+                tickCount = 6;
+
+            addhealth += tickHeal * tickCount;
+            unitTarget->RemoveAurasByCasterSpell(targetAura->GetId(), targetAura->GetCasterGUID());
+        }
+        else
+            addhealth = caster->SpellHealingBonusDone(unitTarget, m_spellInfo, addhealth, HEAL);
+
+        addhealth = unitTarget->SpellHealingBonusTaken(caster, m_spellInfo, addhealth, HEAL);
+
+        m_healing += addhealth;
+    }
 }
 
 void Spell::EffectHealPct(uint32 /*i*/)

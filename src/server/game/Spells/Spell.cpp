@@ -981,18 +981,19 @@ void Spell::DoAllEffectOnTarget(TargetInfo *target)
         // create far target mask
         for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
             if (IsFarUnitTargetEffect(m_spellInfo->Effect[i]))
-                if ((1<<i) & mask)
-                    farMask |= (1<<i);
+                if ((1 << i) & mask)
+                    farMask |= (1 << i);
         if (!farMask)
             return;
         // find unit in world
         unit = ObjectAccessor::FindUnit(target->targetGUID);
         if (!unit)
             return;
+
         // do far effects on the unit
         // can't use default call because of threading, do stuff as fast as possible
         for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
-            if (farMask & (1<<i))
+            if (farMask & (1 << i))
                 HandleEffects(unit, NULL, NULL, i);
         return;
     }
@@ -1023,7 +1024,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo *target)
                             // Slice and Dice, relentless strikes, eviscerate
     //bool canEffectTrigger = (m_spellInfo->AttributesEx4 & (SPELL_ATTR_EX4_CANT_PROC_FROM_SELFCAST | SPELL_ATTR_EX4_UNK4) ? m_caster != unitTarget : true)
     //    && m_canTrigger;
-    Unit* spellHitTarget = NULL;
+    Unit* spellHitTarget = nullptr;
 
     if (missInfo == SPELL_MISS_NONE)                        // In case spell hit target, do all effect on that target
         spellHitTarget = unit;
@@ -1056,7 +1057,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo *target)
 
     // All calculated do it!
     // Do healing and triggers
-    if (m_healing)
+    if (m_healing > 0)
     {
         bool crit = caster->isSpellCrit(unitTarget, m_spellInfo, m_spellSchoolMask);
         procEx |= PROC_EX_HEALING; // Healing Proc
@@ -1084,7 +1085,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo *target)
                 bg->UpdatePlayerScore(caster->ToPlayer(), SCORE_HEALING_DONE, gain);
     }
     // Do damage and triggers
-    else if (m_damage)
+    else if (m_damage > 0)
     {
         // Fill base damage struct (unitTarget - is real spell target)
         SpellNonMeleeDamage damageInfo(caster, unitTarget, m_spellInfo->Id, m_spellSchoolMask);

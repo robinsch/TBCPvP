@@ -135,6 +135,10 @@ void WorldSession::HandleLearnTalentOpcode(WorldPacket & recv_data)
     GetPlayer()->addTalent(spellid, GetPlayer()->GetActiveSpec(), true);
     sLog->outDetail("TalentID: %u Rank: %u Spell: %u\n", talent_id, requested_rank, spellid);
 
+    // learn max talent rank for instant chars
+    if (GetPlayer()->getCharacterMode() == CHARACTER_MODE_INSTANT)
+        GetPlayer()->learnHigherTalentRanks(spellid);
+
     // update free talent points
     GetPlayer()->SetFreeTalentPoints(CurTalentPoints - 1);
 }
