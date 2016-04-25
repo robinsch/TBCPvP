@@ -2318,7 +2318,7 @@ MeleeHitOutcome Unit::RollMeleeOutcomeAgainst(const Unit *pVictim, WeaponAttackT
     }
 
     // always crit against a sitting target (except 0 crit chance)
-    if (pVictim->GetTypeId() == TYPEID_PLAYER && crit_chance > 0 && !pVictim->IsStandState())
+    if (pVictim->GetTypeId() == TYPEID_PLAYER && crit_chance > 0 && pVictim->IsSitState())
     {
         sLog->outDebug("RollMeleeOutcomeAgainst: CRIT (sitting victim)");
         return MELEE_HIT_CRIT;
