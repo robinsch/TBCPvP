@@ -4130,37 +4130,13 @@ uint8 Spell::CanCast(bool strict)
                     return SPELL_FAILED_ROOTED;
                 if (Unit* target = m_targets.getUnitTarget())
                 {
+                    float objSize = target->GetObjectSize();
+                    float targetObjectSize = std::min(target->GetObjectSize(), 4.0f);
                     SpellRangeEntry const* spellRange = sSpellRangeStore.LookupEntry(m_spellInfo->rangeIndex);
-                    float maxRange = GetSpellMaxRange(spellRange);
-                    if (!m_caster->CanMakePathTo(target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), maxRange + 10.0f))
+                    float range = GetSpellMaxRange(spellRange) * 3.0f + objSize;
+                    if (!m_caster->CanMakePathTo(target->GetPositionX(), target->GetPositionY(), target->GetPositionZ() + targetObjectSize, range))
                         return SPELL_FAILED_NOPATH;
                 }
-
-                /* Blades Edge Arena:
-                Even with MMAP on you cannot charge from ground to the top of the stone pillar vise versa
-                So we check for caster and for target
-                Example: http://i.imgur.com/ItVSaLm.jpg */
-                /*
-                bool fail = false;
-                if (m_caster->GetMapId() == 562)
-                {
-                    // Stone Pillar 1 (see example above)
-                    if (target && m_caster)
-                    {
-                        if (((target->GetDistance2d(6249.0f, 275.0f) < 6.5f) && m_caster->GetPositionZ() < 8.0f) ||
-                            (m_caster->GetDistance2d(6249.0f, 275.0f) < 6.5f) && target->GetPositionZ() < 8.0f)
-                            fail = true;
-
-                        // Stone Pillar 2 (see example above)
-                        if (((target->GetDistance2d(6228.5f, 249.0f) < 6.5f) && m_caster->GetPositionZ() < 8.0f) ||
-                            (m_caster->GetDistance2d(6228.5f, 249.0f) < 6.5f) && target->GetPositionZ() < 8.0f)
-                            fail = true;
-                    }
-                }
-                if (fail)
-                    return SPELL_FAILED_NOPATH;
-                */
-                    
                 break;
             }
             case SPELL_EFFECT_SKINNING:
