@@ -2677,81 +2677,59 @@ void Spell::EffectHeal(uint32 /*i*/)
 
 void Spell::EffectHealPct(uint32 /*i*/)
 {
-    if (unitTarget && unitTarget->isAlive() && damage >= 0)
-    {
-        // Try to get original caster
-        Unit *caster = m_originalCasterGUID ? m_originalCaster : m_caster;
+    if (!unitTarget || !unitTarget->isAlive() || damage < 0)
+        return;
 
-        // Skip if m_originalCaster not available
-        if (!caster)
-            return;
+    // Skip if m_originalCaster not available
+    if (!m_originalCaster)
+        return;
 
-        uint32 addhealth = unitTarget->GetMaxHealth() * damage / 100;
-        caster->SendHealSpellLog(unitTarget, m_spellInfo->Id, addhealth, false);
-
-        int32 gain = unitTarget->ModifyHealth(int32(addhealth));
-        unitTarget->getHostileRefManager().threatAssist(m_caster, float(gain) * 0.5f, m_spellInfo);
-
-        if (caster->GetTypeId() == TYPEID_PLAYER)
-            if (BattleGround *bg = caster->ToPlayer()->GetBattleGround())
-                bg->UpdatePlayerScore(caster->ToPlayer(), SCORE_HEALING_DONE, gain);
-    }
+    uint32 heal = m_originalCaster->SpellHealingBonusDone(unitTarget, m_spellInfo, (unitTarget->GetMaxHealth() * damage / 100), HEAL);
+    m_healing += unitTarget->SpellHealingBonusTaken(m_originalCaster, m_spellInfo, heal, HEAL);
 }
 
 void Spell::EffectHealMechanical(uint32 /*i*/)
 {
-    // Mechanic creature type should be correctly checked by targetCreatureType field
-    if (unitTarget && unitTarget->isAlive() && damage >= 0)
-    {
-        // Try to get original caster
-        Unit *caster = m_originalCasterGUID ? m_originalCaster : m_caster;
+    if (!unitTarget || !unitTarget->isAlive() || damage < 0)
+        return;
 
-        // Skip if m_originalCaster not available
-        if (!caster)
-            return;
+    // Skip if m_originalCaster not available
+    if (!m_originalCaster)
+        return;
 
-        uint32 addhealth = caster->SpellHealingBonusDone(unitTarget, m_spellInfo, damage, HEAL);
-        addhealth = unitTarget->SpellHealingBonusTaken(caster, m_spellInfo, addhealth, HEAL);
-        caster->SendHealSpellLog(unitTarget, m_spellInfo->Id, addhealth, false);
-        unitTarget->ModifyHealth(int32(damage));
-    }
+    uint32 heal = m_originalCaster->SpellHealingBonusDone(unitTarget, m_spellInfo, uint32(damage), HEAL);
+    m_healing += unitTarget->SpellHealingBonusTaken(m_originalCaster, m_spellInfo, heal, HEAL);
 }
 
 void Spell::EffectHealthLeech(uint32 i)
 {
-    if (!unitTarget)
+    if (!unitTarget || !unitTarget->isAlive() || damage < 0)
         return;
 
-    if (!unitTarget->isAlive())
-        return;
-
-    if (damage < 0)
-        return;
+    damage = m_caster->SpellDamageBonusDone(unitTarget, m_spellInfo, uint32(damage), SPELL_DIRECT_DAMAGE);
+    damage = unitTarget->SpellDamageBonusTaken(m_caster, m_spellInfo, uint32(damage), SPELL_DIRECT_DAMAGE);
 
     sLog->outDebug("HealthLeech :%i", damage);
 
-    float multiplier = m_spellInfo->EffectMultipleValue[i];
+    float healthMultiplier = m_spellInfo->EffectMultipleValue[i];
 
     if (Player *modOwner = m_caster->GetSpellModOwner())
-        modOwner->ApplySpellMod(m_spellInfo->Id, SPELLMOD_MULTIPLE_VALUE, multiplier);
+        modOwner->ApplySpellMod(m_spellInfo->Id, SPELLMOD_MULTIPLE_VALUE, healthMultiplier);
 
-    int32 new_damage = int32(damage*multiplier);
-    uint32 curHealth = unitTarget->GetHealth();
-    new_damage = m_caster->SpellNonMeleeDamageLog(unitTarget, m_spellInfo->Id, new_damage);
-    if (curHealth < new_damage)
-        new_damage = curHealth;
+    m_damage += (damage * healthMultiplier);
+    // get max possible damage, don't count overkill for heal
+    uint32 healthGain = unitTarget->GetHealth() < m_damage ? unitTarget->GetHealth() : m_damage;
 
     if (m_caster->isAlive())
     {
-        new_damage = m_caster->SpellHealingBonusTaken(m_caster, m_spellInfo, new_damage, HEAL);
+        healthGain = m_caster->SpellHealingBonusDone(m_caster, m_spellInfo, healthGain, HEAL);
+        healthGain = m_caster->SpellHealingBonusTaken(m_caster, m_spellInfo, healthGain, HEAL);
 
-        m_caster->ModifyHealth(new_damage);
+        m_caster->ModifyHealth(healthGain);
 
         if (m_caster->GetTypeId() == TYPEID_PLAYER)
-            m_caster->SendHealSpellLog(m_caster, m_spellInfo->Id, uint32(new_damage));
+            m_caster->SendHealSpellLog(m_caster, m_spellInfo->Id, uint32(healthGain));
     }
-//    m_healthLeech+=tmpvalue;
-//    m_damage+=new_damage;
 }
 
 void Spell::DoCreateItem(uint32 i, uint32 itemtype)
@@ -4578,32 +4556,18 @@ void Spell::EffectThreat(uint32 /*i*/)
 
 void Spell::EffectHealMaxHealth(uint32 /*i*/)
 {
-    if (!unitTarget)
+    if (!unitTarget || !unitTarget->isAlive())
         return;
 
-    if (!unitTarget->isAlive())
-        return;
+    uint32 addhealth = 0;
 
-    if (unitTarget->GetMaxNegativeAuraModifier(SPELL_AURA_MOD_HEALING_PCT) <= -100)
-        return;
-
-    uint32 addhealth = unitTarget->GetMaxHealth() - unitTarget->GetHealth();
-
-    // Lay on Hands
-    if (m_spellInfo->SpellFamilyName == SPELLFAMILY_PALADIN && m_spellInfo->SpellFamilyFlags & 0x0000000000008000)
-    {
-        if (!m_originalCaster)
-            return;
-        addhealth = addhealth > m_originalCaster->GetMaxHealth() ? m_originalCaster->GetMaxHealth() : addhealth;
-        uint32 LoHamount = unitTarget->GetHealth() + m_originalCaster->GetMaxHealth();
-        LoHamount = LoHamount > unitTarget->GetMaxHealth() ? unitTarget->GetMaxHealth() : LoHamount;
-        unitTarget->SetHealth(LoHamount);
-    }
+    // damage == 0 - heal for caster max health
+    if (damage == 0)
+        addhealth = m_caster->GetMaxHealth();
     else
-        unitTarget->SetHealth(unitTarget->GetMaxHealth());
+        addhealth = unitTarget->GetMaxHealth() - unitTarget->GetHealth();
 
-    if (m_originalCaster)
-        m_originalCaster->SendHealSpellLog(unitTarget, m_spellInfo->Id, addhealth, false);
+    m_healing += addhealth;
 }
 
 void Spell::EffectInterruptCast(uint32 eff)
