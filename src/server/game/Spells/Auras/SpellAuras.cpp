@@ -334,6 +334,7 @@ Aura::Aura(SpellEntry const* spellproto, uint32 eff, int32 *currentBasePoints, U
     m_spellProto = spellproto;
     m_isPassive = IsPassiveSpell(GetId());
     m_positive = IsPositiveEffect(GetId(), m_effIndex);
+    m_isSingleTargetAura = IsSingleTargetSpell(m_spellProto);
     m_applyTime = time(NULL);
 
     int32 damage;
