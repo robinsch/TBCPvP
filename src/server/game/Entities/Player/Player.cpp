@@ -7700,6 +7700,10 @@ void Player::DuelComplete(DuelCompleteType type)
     duel->opponent->SetUInt64Value(PLAYER_DUEL_ARBITER, 0);
     duel->opponent->SetUInt32Value(PLAYER_DUEL_TEAM, 0);
 
+    // restore health/mana view for friendly player
+    ForceHealthAndPowerUpdate();
+    duel->opponent->ForceHealthAndPowerUpdate();
+
     delete duel->opponent->duel;
     duel->opponent->duel = NULL;
     delete duel;
@@ -18292,6 +18296,10 @@ void Player::UpdateDuelFlag(time_t currTime)
     SetUInt32Value(PLAYER_DUEL_TEAM, 1);
     duel->opponent->SetUInt32Value(PLAYER_DUEL_TEAM, 2);
 
+    // force health/mana to be sent by percentage for dueler
+    ForceHealthAndPowerUpdate();
+    duel->opponent->ForceHealthAndPowerUpdate();
+
     duel->startTimer = 0;
     duel->startTime  = currTime;
     duel->opponent->duel->startTimer = 0;
@@ -18425,8 +18433,6 @@ void Player::StopCastingCharm()
         charm->RemoveSpellsCausingAura(SPELL_AURA_MOD_POSSESS_PET);
         charm->RemoveSpellsCausingAura(SPELL_AURA_MOD_POSSESS);
     }
-
-    charm->SendHealthUpdateDueToCharm(this);
 
     if (GetCharmGUID())
         sLog->outError("CRASH ALARM! Player %s is not able to uncharm unit (Entry: %u, Type: %u)", GetName(), charm->GetEntry(), charm->GetTypeId());
@@ -18581,8 +18587,6 @@ void Player::PetSpellInitialize()
     }
 
     GetSession()->SendPacket(&data);
-
-    pet->SendHealthUpdateDueToCharm(this);
 }
 
 void Player::PossessSpellInitialize()
@@ -18611,8 +18615,6 @@ void Player::PossessSpellInitialize()
     data << uint8(0);                                       // cooldowns count
 
     GetSession()->SendPacket(&data);
-
-    charm->SendHealthUpdateDueToCharm(this);
 }
 
 void Player::CharmSpellInitialize()
@@ -18671,7 +18673,9 @@ void Player::CharmSpellInitialize()
 
     GetSession()->SendPacket(&data);
 
-    charm->SendHealthUpdateDueToCharm(this);
+    charm->ForceHealthAndPowerUpdate(this);
+    if (charm->GetTypeId() == TYPEID_PLAYER)
+        ForceHealthAndPowerUpdate(charm->ToPlayer());
 }
 
 void Player::SendRemoveControlBar()

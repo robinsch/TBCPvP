@@ -12528,8 +12528,11 @@ void Unit::SetCharmedBy(Unit* charmer, CharmType type)
             charmInfo->InitCharmCreateSpells();
     }
 
+    charmer->ForceHealthAndPowerUpdate();       
     if (charmer->GetTypeId() == TYPEID_PLAYER)
     {
+        ForceHealthAndPowerUpdate(charmer->ToPlayer());
+
         switch (type)
         {
             case CHARM_TYPE_POSSESS:
@@ -12648,6 +12651,10 @@ void Unit::RemoveCharmedBy(Unit *charmer)
                 break;
         }
     }
+
+    charmer->ForceHealthAndPowerUpdate();
+    if (charmer->GetTypeId() == TYPEID_PLAYER)
+        ForceHealthAndPowerUpdate(charmer->ToPlayer());
 
     //a guardian should always have charminfo
     if (charmer->GetTypeId() == TYPEID_PLAYER && this != charmer->GetFirstControlled())
@@ -12859,15 +12866,21 @@ bool Unit::ShouldRevealHealthTo(Player* player) const
     return false;
 }
 
-void Unit::SendHealthUpdateDueToCharm(Player* charmer)
+void Unit::ForceHealthAndPowerUpdate(Player* charmer)
 {
+    uint32 powerType = getPowerType();
     ForceValuesUpdateAtIndex(UNIT_FIELD_HEALTH);
     ForceValuesUpdateAtIndex(UNIT_FIELD_MAXHEALTH);
+    ForceValuesUpdateAtIndex(UNIT_FIELD_POWER1 + powerType);
+    ForceValuesUpdateAtIndex(UNIT_FIELD_MAXPOWER1 + powerType);
 
-    if (Group* group = charmer->GetGroup())
+    if (charmer)
     {
-        charmer->SetGroupUpdateFlag(GROUP_UPDATE_PET);
-        group->UpdatePlayerOutOfRange(charmer);
+        if (Group* group = charmer->GetGroup())
+        {
+            charmer->SetGroupUpdateFlag(GROUP_UPDATE_PET);
+            group->UpdatePlayerOutOfRange(charmer);
+        }
     }
 }
 

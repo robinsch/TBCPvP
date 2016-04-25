@@ -944,7 +944,7 @@ class Unit : public WorldObject
         int32 ModifyHealth(int32 val);
 
         bool ShouldRevealHealthTo(Player* player) const;
-        void SendHealthUpdateDueToCharm(Player* charmer);
+        void ForceHealthAndPowerUpdate(Player* charmer = nullptr);
 
         Powers getPowerType() const { return Powers(GetByteValue(UNIT_FIELD_BYTES_0, 3)); }
         void setPowerType(Powers power);

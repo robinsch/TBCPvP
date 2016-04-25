@@ -605,7 +605,7 @@ void Creature::Update(uint32 diff)
                 RegenerateHealth();
             }
             else if (IsPolymorphed())
-                    RegenerateHealth();
+                RegenerateHealth();
 
             RegenerateMana();
 
