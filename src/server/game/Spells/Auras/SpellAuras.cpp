@@ -4073,45 +4073,22 @@ void Aura::HandlePeriodicHeal(bool apply, bool Real)
 
     m_isPeriodic = apply;
 
-    // only at real apply
-    if (Real && apply && GetSpellProto()->Mechanic == MECHANIC_BANDAGE)
-    {
-        // provided m_target as original caster to prevent apply aura caster selection for this negative buff
-        m_target->CastSpell(m_target, 11196, true, NULL, this, m_target->GetGUID());
-    }
+    Unit* target = GetTarget();
 
     // For prevent double apply bonuses
-    bool loading = (m_target->GetTypeId() == TYPEID_PLAYER && m_target->ToPlayer()->GetSession()->PlayerLoading());
+    bool loading = (target->GetTypeId() == TYPEID_PLAYER && (target->ToPlayer()->GetSession()->PlayerLoading()));
 
-    if (!loading && apply)
+    // Custom damage calculation after
+    if (apply)
     {
-        switch (m_spellProto->SpellFamilyName)
-        {
-            case SPELLFAMILY_DRUID:
-            {
-                // Rejuvenation
-                if (m_spellProto->SpellFamilyFlags & 0x0000000000000010LL)
-                {
-                    if (Unit* caster = GetCaster())
-                    {
-                        Unit::AuraList const& classScripts = caster->GetAurasByType(SPELL_AURA_OVERRIDE_CLASS_SCRIPTS);
-                        for (Unit::AuraList::const_iterator k = classScripts.begin(); k != classScripts.end(); ++k)
-                        {
-                            int32 tickcount = GetSpellDuration(m_spellProto) / m_spellProto->EffectAmplitude[m_effIndex];
-                            switch ((*k)->GetModifier()->m_miscvalue)
-                            {
-                                case 4953:                          // Increased Rejuvenation Healing - Harold's Rejuvenating Broach Aura
-                                case 4415:                          // Increased Rejuvenation Healing - Idol of Rejuvenation Aura
-                                {
-                                    m_modifier.m_amount += (*k)->GetModifier()->m_amount / tickcount;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        if (loading)
+            return;
+
+        Unit* caster = GetCaster();
+        if (!caster)
+            return;
+
+        m_modifier.m_amount = caster->SpellHealingBonusDone(target, GetSpellProto(), m_modifier.m_amount, DOT);
     }
 }
 
@@ -5925,22 +5902,15 @@ void Aura::PeriodicTick()
 
             // ignore non positive values (can be result apply spellmods to aura damage
             uint32 amount = GetModifierValuePerStack() > 0 ? GetModifierValuePerStack() : 0;
-
             uint32 pdamage;
-            float EffectModifier = 1.0f;
 
             pdamage = m_modifier.m_auraname == SPELL_AURA_OBS_MOD_HEALTH ? uint32(target->GetMaxHealth() * amount / 100) : amount;
-            float negativeMod = target->GetMaxNegativeAuraModifier(SPELL_AURA_MOD_HEALING_PCT);
-            if (negativeMod)
-                EffectModifier *= (100.0f + negativeMod) / 100.0f;
-            float positiveMod = target->GetMaxPositiveAuraModifier(SPELL_AURA_MOD_HEALING_PCT);
-            if (positiveMod)
-                EffectModifier *= (100.0f + positiveMod) / 100.0f;
+
+            pdamage = target->SpellHealingBonusTaken(pCaster, spellProto, pdamage, DOT);
 
             if (Player* modOwner = pCaster->GetSpellModOwner())
                 modOwner->ApplySpellMod(m_spellProto->Id, SPELLMOD_DOT, pdamage);
 
-            pdamage *= EffectModifier;
             pdamage *= GetStackAmount();
 
             sLog->outDetail("PeriodicTick: %u (TypeId: %u) heal of %u (TypeId: %u) for %u health inflicted by %u",
