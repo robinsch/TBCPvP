@@ -426,11 +426,15 @@ void Spell::EffectSchoolDamage(uint32 effect_idx)
             case SPELLFAMILY_DRUID:
             {
                 // Ferocious Bite
-                if ((m_spellInfo->SpellFamilyFlags & 0x000800000) && m_spellInfo->SpellVisual == 6587)
+                if (m_caster->GetTypeId() == TYPEID_PLAYER && (m_spellInfo->SpellFamilyFlags & 0x000800000) && m_spellInfo->SpellVisual == 6587)
                 {
                     // converts each extra point of energy into ($f1+$AP/6100) additional damage
-                    float multiple = m_caster->GetTotalAttackPowerValue(BASE_ATTACK) / 630 + m_spellInfo->DmgMultiplier[effect_idx];
-                    damage += int32(m_caster->GetPower(POWER_ENERGY) * multiple);
+                    float attackPower = m_caster->GetTotalAttackPowerValue(BASE_ATTACK);
+                    float multiple = attackPower / 630 + m_spellInfo->DmgMultiplier[effect_idx];
+                    uint32 energy = m_caster->GetPower(POWER_ENERGY);
+                    damage += int32(energy * multiple);
+                    // The scaling should be 3% attackpower scaling each combo point, leading up to 15% at 5 combopoints.
+                    damage += int32(CalculatePct(m_caster->ToPlayer()->GetComboPoints() * attackPower, 3));
                     m_caster->SetPower(POWER_ENERGY, 0);
                 }
                 // Rake
