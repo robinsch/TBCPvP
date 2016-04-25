@@ -22317,13 +22317,6 @@ void Player::AddToArenaQueue(uint8 aType, bool isRated)
     if (!IsInWorld() || !isAlive())
         return;
 
-    if (m_Played_time[PLAYED_TIME_TOTAL] < 900 && !isGameMaster())
-    {
-        GetSession()->SendAreaTriggerMessage("You must have at least 15 minutes of played time before you may queue. Please spend a little more time setting up your character, and try again soon. You may check how much time is remaining by typing: /played");
-        ChatHandler(this).PSendSysMessage("You must have at least 15 minutes of played time before you may queue. Please spend a little more time setting up your character, and try again soon. You may check how much time is remaining by typing: /played");
-        return;
-    }
-
     // only max level
     if (getLevel() < sWorld->getConfig(CONFIG_MAX_PLAYER_LEVEL))
         return;
