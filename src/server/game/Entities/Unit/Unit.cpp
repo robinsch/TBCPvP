@@ -9975,6 +9975,9 @@ int32 Unit::CalculateSpellDuration(SpellEntry const* spellProto, uint8 effect_in
     else
         duration = minduration;
 
+    if (Player* modOwner = GetSpellModOwner())
+        modOwner->ApplySpellMod(spellProto->Id, SPELLMOD_DURATION, duration);
+
     if (duration > 0)
     {
         int32 mechanic = GetEffectMechanic(spellProto, effect_index);
