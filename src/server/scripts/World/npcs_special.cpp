@@ -37,7 +37,7 @@ npc_doctor              100%    Gustaf Vanhowzen and Gregory Victor, quest 6622 
 npc_mount_vendor        100%    Regular mount vendors all over the world. Display gossip if player doesn't meet the requirements to buy
 npc_rogue_trainer        80%    Scripted trainers, so they are able to offer item 17126 for class quest 6681
 npc_sayge               100%    Darkmoon event fortune teller, buff player based on answers given
-npc_snake_trap_serpents  80%    AI for snakes that summoned by Snake Trap
+npc_snake_trap_serpents 100%    AI for snakes that summoned by Snake Trap
 npc_firework            100%    NPC's summoned by rockets and rocket clusters, for making them cast visual
 EndContentData */
 
@@ -1285,52 +1285,54 @@ CreatureAI* GetAI_npc_winter_reveler(Creature* creature)
 ## npc_snake_trap_serpents
 ####*/
 
-#define SPELL_MIND_NUMBING_POISON    8692    //Viper
-#define SPELL_DEADLY_POISON          34655   //Venomous Snake
-#define SPELL_CRIPPLING_POISON       3409    //Viper
+enum SnakeTrap
+{
+    SPELL_MIND_NUMBING_POISON     = 25810,  // Viper poison 1
+    SPELL_DEADLY_POISON           = 34655,  // Viper poison 2
+    SPELL_CRIPPLING_POISON        = 30981,  // Viper poison 3
+    SPELL_ENTRAPMENT              = 19185,  // Entrapment
 
-#define VENOMOUS_SNAKE_TIMER 1200
-#define VIPER_TIMER 3000
+    NPC_VIPER                     = 19921,
 
-#define C_VIPER 19921
+    VENOMOUS_SNAKE_TIMER          = 1500,
+    VIPER_SNAKE_TIMER             = 3000,
+};
 
 struct npc_snake_trap_serpentsAI : public ScriptedAI
 {
-    npc_snake_trap_serpentsAI(Creature *c) : ScriptedAI(c) {}
+    npc_snake_trap_serpentsAI(Creature *c) : ScriptedAI(c) { }
 
     uint32 SpellTimer;
-    Unit *Owner;
-    bool IsViper;
+    Unit *owner;
 
     void EnterCombat(Unit * /*who*/) {}
 
     void Reset()
     {
-        Owner = me->GetOwner();
+        if (owner = me->GetOwner())
+        {
+            CreatureTemplate const* Info = me->GetCreatureTemplate();
 
-        if (!me->isPet() || !Owner)
-            return;
-
-        CreatureTemplate const* Info = me->GetCreatureTemplate();
-
-        //Add delta to make them not all hit the same time
-        uint32 delta = (rand() % 7) * 100;
-        me->SetStatFloatValue(UNIT_FIELD_BASEATTACKTIME, Info->baseattacktime + delta);
-        me->SetStatFloatValue(UNIT_FIELD_RANGED_ATTACK_POWER , Info->attackpower);
+            me->SetMaxHealth(uint32(107 * (me->getLevel() - 40) * 0.025f));
+            // Add delta to make them not all hit the same time
+            uint32 delta = (rand() % 7) * 100;
+            me->SetStatFloatValue(UNIT_FIELD_BASEATTACKTIME, Info->baseattacktime + delta);
+            me->SetStatFloatValue(UNIT_FIELD_RANGED_ATTACK_POWER , Info->attackpower);
+        }
     }
 
-    //Redefined for random target selection:
+    // Redefined for random target selection:
     void MoveInLineOfSight(Unit *who)
     {
-        if (!me->isPet() || !Owner)
+        if (!owner)
             return;
 
-        if (!me->getVictim() && who->isTargetableForAttack() && (me->IsHostileTo(who)) && who->isInAccessiblePlaceFor (me) && Owner->IsHostileTo(who))//don't attack not-pvp-flaged
+        if (Unit* attacker = owner->getAttackerForHelper())
         {
             if (me->GetDistanceZ(who) > CREATURE_Z_ATTACK_RANGE)
                 return;
 
-            float attackRadius = me->GetAttackDistance(who);
+            float attackRadius = 15.0f;
             if (me->IsWithinDistInMap(who, attackRadius) && me->IsWithinLOSInMap(who))
             {
                 if (!(rand() % 5))
@@ -1343,54 +1345,79 @@ struct npc_snake_trap_serpentsAI : public ScriptedAI
         }
     }
 
+    bool HandleEntrapment()
+    {
+        float f_chance = 0;
+        Unit::AuraList const& auraTriggerSpell = owner->GetAurasByType(SPELL_AURA_PROC_TRIGGER_SPELL);
+        for (Unit::AuraList::const_iterator itr = auraTriggerSpell.begin(); itr != auraTriggerSpell.end(); ++itr)
+        {
+            switch ((*itr)->GetSpellProto()->Id)
+            {
+                case 19184:                             // Entrapment (Rank 1)
+                case 19387:                             // Entrapment (Rank 2)
+                case 19388:                             // Entrapment (Rank 3)
+                    f_chance = (*itr)->GetSpellProto()->procChance;
+                    break;
+            }
+
+            if (roll_chance_f(f_chance))
+                return true;
+        }
+        
+        return false;
+    }
+
     void UpdateAI(const uint32 diff)
     {
-        if (!Owner)
+        if (!owner)
             return;
 
-        //Follow if not in combat
-        if (!me->hasUnitState(UNIT_STAT_FOLLOW)&& !me->isInCombat())
-        {
-            me->GetMotionMaster()->Clear();
-            me->GetMotionMaster()->MoveFollow(Owner, PET_FOLLOW_DIST, PET_FOLLOW_ANGLE);
-        }
-
-        //No victim -> get new from owner (need this because MoveInLineOfSight won't work while following -> corebug)
+        // No victim -> get new from owner (need this because MoveInLineOfSight won't work while following -> corebug)
         if (!me->getVictim())
         {
             if (me->isInCombat())
                 DoStopAttack();
 
-            if (Owner->getAttackerForHelper())
-                AttackStart(Owner->getAttackerForHelper());
+            if (owner->getAttackerForHelper())
+                AttackStart(owner->getAttackerForHelper());
 
             return;
         }
 
         if (SpellTimer <= diff)
         {
-            if (me->GetEntry() == C_VIPER) //Viper
+            if (me->GetEntry() == NPC_VIPER) // Viper
             {
-                if (urand(0, 2) == 0) //33% chance to cast
+                if (rand() % 3 == 0) // 33% chance to cast
                 {
                     uint32 spell;
-                    if (urand(0, 1) == 0)
+                    if (rand() % 2 == 0)
                         spell = SPELL_MIND_NUMBING_POISON;
                     else
                         spell = SPELL_CRIPPLING_POISON;
 
                     DoCast(me->getVictim(), spell);
+
+                    if (HandleEntrapment())
+                        DoCast(me->getVictim(), SPELL_ENTRAPMENT);
                 }
 
-                SpellTimer = VIPER_TIMER;
+                SpellTimer = VIPER_SNAKE_TIMER;
             }
-            else //Venomous Snake
+            else // Venomous Snake
             {
-                if (rand() % 10 < 8) //80% chance to cast
+                if (rand() % 10 < 8) // 80% chance to cast
+                {
                     DoCast(me->getVictim(), SPELL_DEADLY_POISON);
-                SpellTimer = VENOMOUS_SNAKE_TIMER + (rand() %5)*100;
+
+                    if (HandleEntrapment())
+                        DoCast(me->getVictim(), SPELL_ENTRAPMENT);
+                }
+
+                SpellTimer = VENOMOUS_SNAKE_TIMER + (rand() % 5) * 100;
             }
         } else SpellTimer -= diff;
+
         DoMeleeAttackIfReady();
     }
 };

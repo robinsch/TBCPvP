@@ -1266,18 +1266,14 @@ bool Guardian::InitStatsForLevel(uint32 petlevel)
                     SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, float(petlevel * 4 + petlevel));
                     break;
                 }
-                case 19833: //Snake Trap - Venomous Snake
+                case 19833: // Snake Trap - Venomous Snake
                 {
-                    SetCreateHealth(120);
-                    SetCreateMana(0);
                     SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, float((petlevel / 2) - 25));
                     SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, float((petlevel / 2) - 18));
                     break;
                 }
-                case 19921: //Snake Trap - Viper
+                case 19921: // Snake Trap - Viper
                 {
-                    SetCreateHealth(120);
-                    SetCreateMana(0);
                     SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, float(petlevel / 2 - 10));
                     SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, float(petlevel / 2));
                     break;
