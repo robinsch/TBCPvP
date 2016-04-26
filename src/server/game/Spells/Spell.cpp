@@ -2246,8 +2246,8 @@ void Spell::prepare(SpellCastTargets * targets, Aura* triggeredByAura)
     {
         BattleGround* bg = plCaster->GetBattleGround();
         if (bg && bg->GetStatus() == STATUS_WAIT_JOIN)
-            if (!IsChanneledSpell(m_spellInfo))
-                m_casttime = NULL;
+            if (!(IsChanneledSpell(m_spellInfo) && sSpellMgr->IsProfessionSpell(m_spellInfo->Id)))
+                m_casttime = 0;
     }
 
     if ((IsChanneledSpell(m_spellInfo) || m_casttime) && m_caster->GetTypeId() == TYPEID_PLAYER && m_caster->ToPlayer()->isMoving() && m_spellInfo->InterruptFlags & SPELL_INTERRUPT_FLAG_MOVEMENT)
