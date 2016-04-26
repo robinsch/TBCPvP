@@ -1025,6 +1025,7 @@ class Unit : public WorldObject
         float MeleeSpellMissChance(const Unit *pVictim, WeaponAttackType attType, int32 skillDiff, uint32 spellId) const;
         SpellMissInfo MeleeSpellHitResult(Unit *pVictim, SpellEntry const *spell);
         SpellMissInfo MagicSpellHitResult(Unit *pVictim, SpellEntry const *spell);
+        SpellMissInfo MagicAuraHitResult(Unit* victim, SpellEntry const* spellInfo);
         SpellMissInfo SpellHitResult(Unit *pVictim, SpellEntry const *spell, bool canReflect = false);
 
         float GetUnitMissChance(WeaponAttackType attType) const;

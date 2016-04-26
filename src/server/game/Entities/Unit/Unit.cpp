@@ -2666,17 +2666,6 @@ SpellMissInfo Unit::MeleeSpellHitResult(Unit *pVictim, SpellEntry const *spell)
         canDodge = false;
     }
 
-    // Check for attack from behind
-    if (!pVictim->HasInArc(float(M_PI), this))
-    {
-        // Can`t dodge from behind in PvP (but its possible in PvE)
-        if (pVictim->GetTypeId() == TYPEID_PLAYER)
-            canDodge = false;
-        // Can`t parry or block
-        canParry = false;
-        canBlock = false;
-    }
-
     // Ignore combat result aura
     AuraList const& ignore = GetAurasByType(SPELL_AURA_IGNORE_COMBAT_RESULT);
     for (AuraList::const_iterator i = ignore.begin(); i != ignore.end(); ++i)
@@ -2804,6 +2793,27 @@ SpellMissInfo Unit::MagicSpellHitResult(Unit *pVictim, SpellEntry const *spell)
 
     // binary resist spells
     if (IsBinaryResistable(spell) && CalcBinaryResist(pVictim, schoolMask))
+        return SPELL_MISS_RESIST;
+
+    return SPELL_MISS_NONE;
+}
+
+SpellMissInfo Unit::MagicAuraHitResult(Unit* victim, SpellEntry const* spellInfo)
+{
+    uint32 hitChance = 100;
+    SpellSchoolMask schoolMask = SpellSchoolMask(spellInfo->SchoolMask);
+
+    // SPELL_AURA_MOD_MECHANIC_RESISTANCE
+    hitChance -= victim->GetMechanicResistChance(spellInfo);
+    // SPELLMOD_RESIST_MISS_CHANCE
+    if (Player *modOwner = GetSpellModOwner())
+        modOwner->ApplySpellMod(spellInfo->Id, SPELLMOD_RESIST_MISS_CHANCE, hitChance);
+    // Increase from caster SPELL_AURA_MOD_INCREASES_SPELL_PCT_TO_HIT auras
+    hitChance += GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_INCREASES_SPELL_PCT_TO_HIT, schoolMask);
+    // Increase from victim SPELL_AURA_MOD_ATTACKER_SPELL_HIT_CHANCE auras
+    hitChance += victim->GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_ATTACKER_SPELL_HIT_CHANCE, schoolMask);
+
+    if (urand(0, 100) > hitChance)
         return SPELL_MISS_RESIST;
 
     return SPELL_MISS_NONE;
@@ -3617,7 +3627,7 @@ bool Unit::AddAura(Aura *Aur)
     SpellEntry const* aurSpellInfo = Aur->GetSpellProto();
     spellEffectPair spair = spellEffectPair(Aur->GetId(), Aur->GetEffIndex());
 
-    bool stackModified=false;
+    bool stackModified = false;
     // passive and persistent auras can stack with themselves any number of times
     if (!Aur->IsPassive() && !Aur->IsPersistent())
     {
@@ -3714,6 +3724,14 @@ bool Unit::AddAura(Aura *Aur)
             delete Aur;
             return false;                                   // couldn't remove conflicting aura with higher rank
         }
+    }
+
+    // Calculate if aura should be applied to target - e.g. Frostbolt should deal damage but slow effect can resist
+    if (Aur->GetTarget() && Aur->GetCaster())
+    {
+        SpellMissInfo auraMissInfo = Aur->GetCaster()->MagicAuraHitResult(Aur->GetTarget(), Aur->GetSpellProto());
+        if (auraMissInfo != SPELL_MISS_NONE)
+            Aur->GetCaster()->SendSpellMiss(Aur->GetTarget(), Aur->GetId(), auraMissInfo);
     }
 
     // update single target auras list (before aura add to aura list, to prevent unexpected remove recently added aura)
