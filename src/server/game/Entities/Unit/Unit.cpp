@@ -12902,9 +12902,34 @@ void Unit::ForceHealthAndPowerUpdate(Player* charmer)
     }
 }
 
+Unit* Unit::GetMagicHitRedirectTarget(Unit* victim, SpellEntry const* spellInfo)
+{
+    // Patch 1.2 notes: Spell Reflection no longer reflects abilities
+    if (spellInfo->AttributesEx & SPELL_ATTR_EX_CANT_BE_REDIRECTED || spellInfo->Attributes & (SPELL_ATTR_ABILITY | SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY))
+        return victim;
+
+    Unit::AuraList const& magnetAuras = victim->GetAurasByType(SPELL_AURA_SPELL_MAGNET);
+    for (Unit::AuraList::const_iterator itr = magnetAuras.begin(); itr != magnetAuras.end(); ++itr)
+    {
+        if (Unit* magnet = (*itr)->GetCaster())
+        {
+            if ((*itr)->m_procCharges > 0)
+            {
+                // only drop charge if spell is not delayed
+                if (!spellInfo->speed)
+                    (*itr)->SetAuraProcCharges((*itr)->m_procCharges - 1);
+                    
+                return magnet;
+            }
+        }
+    }
+    
+    return victim;
+}
+
 Unit* Unit::GetMeleeHitRedirectTarget(Unit* victim, SpellEntry const* spellInfo)
 {
-    if ((spellInfo && spellInfo->AttributesEx & (SPELL_ATTR_EX_CANT_BE_REDIRECTED | SPELL_ATTR_EX_CANT_BE_REFLECTED)) == 0)
+    if (spellInfo && spellInfo->AttributesEx & (SPELL_ATTR_EX_CANT_BE_REDIRECTED | SPELL_ATTR_EX_CANT_BE_REFLECTED))
         return victim;
 
     float maxRange = NOMINAL_MELEE_RANGE;
@@ -12923,6 +12948,7 @@ Unit* Unit::GetMeleeHitRedirectTarget(Unit* victim, SpellEntry const* spellInfo)
             }
         }
     }
+
     return victim;
 }
 

@@ -509,6 +509,10 @@ void Spell::FillTargetMap()
         uint32 targetA = m_spellInfo->EffectImplicitTargetA[i];
         uint32 targetB = m_spellInfo->EffectImplicitTargetB[i];
 
+        if (targetA == TARGET_UNIT_TARGET_ANY || targetB == TARGET_UNIT_TARGET_ANY ||
+            targetA == TARGET_UNIT_TARGET_ENEMY || targetB == TARGET_UNIT_TARGET_ENEMY)
+            SelectExplicitTargets();
+
         if (targetA)
             SetTargetMap(i, targetA);
         if (targetB) // In very rare case !A && B
@@ -1230,6 +1234,10 @@ SpellMissInfo Spell::DoSpellHitOnUnit(Unit *unit, const uint32 effectMask)
                 }
             }
 
+            // Remove Grounding Totem on spell hit
+            if (unit->GetTypeId() == TYPEID_UNIT && unit->GetEntry() == 5925)
+                ((Totem*)unit)->UnSummon();
+
             // Start combat
             if (!IsPositiveSpell(m_spellInfo->Id) && IsAggressiveSpell(m_spellInfo, m_IsTriggeredSpell))
                 m_caster->CombatStart(unit, !(m_spellInfo->AttributesEx3 & SPELL_ATTR_EX3_NO_INITIAL_AGGRO), m_spellInfo->Id);
@@ -1682,20 +1690,13 @@ void Spell::SetTargetMap(uint32 i, uint32 cur)
                 case TARGET_UNIT_CHAINHEAL:
                     pushType = PUSH_CHAIN;
                     break;
+                case TARGET_UNIT_TARGET_ANY:
+                case TARGET_UNIT_TARGET_ENEMY:
                 case TARGET_UNIT_TARGET_ALLY:
                 case TARGET_UNIT_TARGET_RAID:
                 case TARGET_UNIT_TARGET_PARTY:
                 case TARGET_UNIT_MINIPET:
                     AddUnitTarget(target, i);
-                    break;
-                case TARGET_UNIT_TARGET_ANY:
-                case TARGET_UNIT_TARGET_ENEMY:
-                    if (m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MELEE || m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_RANGED)
-                        AddUnitTarget(m_caster->GetMeleeHitRedirectTarget(target, m_spellInfo), i);
-                    else if (m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MAGIC)
-                        AddUnitTarget(SelectMagnetTarget(), i);
-                    else
-                        AddUnitTarget(target, i);
                     break;
                 case TARGET_UNIT_PARTY_TARGET:
                 case TARGET_UNIT_CLASS_TARGET:
@@ -5494,6 +5495,10 @@ bool Spell::CheckTargetCreatureType(Unit* target) const
     if (m_spellInfo->Id == 2641 || m_spellInfo->Id == 23356)
         spellCreatureTargetMask =  0;
 
+    // if target is magnet (i.e Grounding Totem) the check is skipped
+    if (target->GetEntry() == 5925)
+        return true;
+
     if (spellCreatureTargetMask)
     {
         uint32 TargetCreatureType = target->GetCreatureTypeMask();
@@ -5592,54 +5597,6 @@ bool Spell::CheckTarget(Unit* target, uint32 eff)
     }
 
     return true;
-}
-
-Unit* Spell::SelectMagnetTarget()
-{
-    Unit* target = m_targets.getUnitTarget();
-
-    if ((target && m_caster->IsHostileTo(target) && m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MAGIC
-        && !(m_spellInfo->Attributes & SPELL_ATTR_ABILITY || m_spellInfo->AttributesEx & SPELL_ATTR_EX_CANT_BE_REDIRECTED || m_spellInfo->Attributes & SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY) // Patch 1.2 notes: Spell Reflection no longer reflects abilities
-        && target->HasAuraType(SPELL_AURA_SPELL_MAGNET)) || (m_spellInfo->SpellIconID == 225 && m_spellInfo->SpellVisual == 262))
-    {
-        Unit::AuraList const& magnetAuras = target->GetAurasByType(SPELL_AURA_SPELL_MAGNET);
-        for (Unit::AuraList::const_iterator itr = magnetAuras.begin(); itr != magnetAuras.end(); ++itr)
-        {
-            if (Unit* magnet = (*itr)->GetCaster())
-            {
-                if ((*itr)->m_procCharges>0)
-                {
-                    if ((*itr)->GetId() == 8178)    //Do not remove the grounding totem effect aura here.  This is removed seperatly when totem is affected by redirected spell
-                        (*itr)->SetAuraProcCharges((*itr)->m_procCharges);
-                    else
-                        (*itr)->SetAuraProcCharges((*itr)->m_procCharges-1);
-                    target = magnet;
-                    m_targets.setUnitTarget(target);
-                    AddUnitTarget(target, 0);
-                    uint64 targetGUID = target->GetGUID();
-                    for (std::list<TargetInfo>::iterator ihit= m_UniqueTargetInfo.begin();ihit != m_UniqueTargetInfo.end();++ihit)
-                    {
-                        if (targetGUID == ihit->targetGUID)                 // Found in list
-                        {
-                            (*ihit).damage = target->GetHealth();
-                            break;
-                        }
-                    }
-                    break;
-                }
-            }
-        }
-        // Delay despawn for damage spells to enable the grounding of multiple in-flight spells
-        bool damageSpell = false;
-        for (uint8 i = 0 ; i < MAX_SPELL_EFFECTS; ++i)
-        {
-            if (m_spellInfo->Effect[i] == SPELL_EFFECT_SCHOOL_DAMAGE)
-                damageSpell = true;
-        }
-        if(target->GetTypeId() != TYPEID_PLAYER && target->ToCreature()->isTotem() && target->ToCreature()->GetEntry() == 5925 && !damageSpell)
-            ((Totem*)target)->UnSummon();
-    }
-    return target;
 }
 
 bool Spell::IsNeedSendToClient() const
@@ -5938,3 +5895,30 @@ bool Spell::shouldRemoveVanish()
     return false;
 }
 
+void Spell::SelectExplicitTargets()
+{
+    // here go all explicit target changes made to explicit targets after spell prepare phase is finished
+    if (Unit* target = m_targets.getUnitTarget())
+    {
+        // check for explicit target redirection, for Grounding Totem for example
+        if (!m_caster->IsFriendlyTo(target))
+        {
+            Unit* redirect;
+            switch (m_spellInfo->DmgClass)
+            {
+                case SPELL_DAMAGE_CLASS_MAGIC:
+                    redirect = m_caster->GetMagicHitRedirectTarget(target, m_spellInfo);
+                    break;
+                case SPELL_DAMAGE_CLASS_MELEE:
+                case SPELL_DAMAGE_CLASS_RANGED:
+                    redirect = m_caster->GetMeleeHitRedirectTarget(target, m_spellInfo);
+                    break;
+                default:
+                    redirect = nullptr;
+                    break;
+            }
+            if (redirect && (redirect != target))
+                m_targets.setUnitTarget(redirect);
+        }
+    }
+}

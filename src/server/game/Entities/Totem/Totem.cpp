@@ -124,6 +124,7 @@ void Totem::InitSummon()
     {
         case 2630: CastSpell(this, 3600, true); break; // Earthbind
         case 5913: CastSpell(this, 8146, true); break; // Tremor
+        case 5925: CastSpell(this, 8178, true); break; // Grounding Totem
         case 5923: CastSpell(this, 8168, true); break; // Poison Cleansing
         case 5924: CastSpell(this, 8171, true); break; // Disease Cleansing
         case 6112: CastSpell(this, 8514, true); break; // Windfury I

@@ -391,8 +391,8 @@ class Spell
         void FillTargetMap();
 
         void SetTargetMap(uint32 i, uint32 cur);
+        void SelectExplicitTargets();
 
-        Unit* SelectMagnetTarget();
         bool CheckTarget(Unit* target, uint32 eff);
 
         void CheckSrc() { if (!m_targets.HasSrc()) m_targets.setSrc(m_caster); }

@@ -1483,7 +1483,8 @@ class Unit : public WorldObject
         uint32 SpellCriticalDamageBonus(SpellEntry const* spellProto, uint32 damage, Unit* pVictim);
         uint32 SpellCriticalHealingBonus(SpellEntry const* spellProto, uint32 damage, Unit* pVictim);
 
-        Unit* GetMeleeHitRedirectTarget(Unit* victim, SpellEntry const* spellInfo = NULL);
+        Unit* GetMagicHitRedirectTarget(Unit* victim, SpellEntry const* spellInfo);
+        Unit* GetMeleeHitRedirectTarget(Unit* victim, SpellEntry const* spellInfo = nullptr);
 
         void SetLastManaUse(uint32 spellCastTime) { m_lastManaUse = spellCastTime; }
         bool IsUnderLastManaUseEffect() const;
