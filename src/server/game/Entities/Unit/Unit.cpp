@@ -2529,6 +2529,10 @@ void Unit::SendMeleeAttackStop(Unit* victim)
 
 bool Unit::isSpellBlocked(Unit *pVictim, SpellEntry const *spellProto, WeaponAttackType attackType)
 {
+    // These spells can't be blocked
+    if (spellProto && spellProto->Attributes & SPELL_ATTR_IMPOSSIBLE_DODGE_PARRY_BLOCK)
+        return false;
+
     if (pVictim->HasInArc(M_PI, this))
     {
         float blockChance = pVictim->GetUnitBlockChance();
@@ -2643,6 +2647,10 @@ SpellMissInfo Unit::MeleeSpellHitResult(Unit *pVictim, SpellEntry const *spell)
     uint32 tmp = missChance;
     if (roll < tmp)
         return SPELL_MISS_MISS;
+
+    // Same spells cannot be parry/dodge/block
+    if (spell->Attributes & SPELL_ATTR_IMPOSSIBLE_DODGE_PARRY_BLOCK)
+        return SPELL_MISS_NONE;
 
     bool canDodge = true;
     bool canParry = true;
