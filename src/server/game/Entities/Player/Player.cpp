@@ -21779,7 +21779,7 @@ void Player::SetViewpoint(WorldObject* target, bool apply)
         // farsight dynobj or puppet may be very far away
         UpdateVisibilityOf(target);
 
-        if (target->isType(TYPEMASK_UNIT))
+        if (target->isType(TYPEMASK_UNIT | TYPEMASK_PLAYER))
         {
             ((Unit*)target)->AddPlayerToVision(this);
             SetSeer(target);
@@ -21795,7 +21795,7 @@ void Player::SetViewpoint(WorldObject* target, bool apply)
             return;
         }
 
-        if (target->isType(TYPEMASK_UNIT))
+        if (target->isType(TYPEMASK_UNIT | TYPEMASK_PLAYER))
             ((Unit*)target)->RemovePlayerFromVision(this);
 
         //must immediately set seer back otherwise may crash
