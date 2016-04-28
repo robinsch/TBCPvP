@@ -847,9 +847,11 @@ bool IsPositiveEffect(uint32 spellId, uint32 effIndex)
 
     switch (spellId)
     {
-        case 23333:                                         // BG spell
-        case 23335:                                         // BG spell
-        case 34976:                                         // BG spell
+        case 23333:                                         // Warsong Flag
+        case 23335:                                         // Silverwing Flag
+        case 34976:                                         // Netherstorm Flag
+        case 23505:                                         // Beserking
+        case 23451:                                         // Speed
         case 31579:                                         // Arcane Empowerment Rank1 talent aura with one positive and one negative (check not needed in wotlk)
         case 31582:                                         // Arcane Empowerment Rank2
         case 31583:                                         // Arcane Empowerment Rank3
@@ -862,15 +864,15 @@ bool IsPositiveEffect(uint32 spellId, uint32 effIndex)
         case 46392:                                         // Focused Assault
         case 46393:                                         // Brutal Assault
         case 43437:                                         // Paralyzed
-        case 28441:                                         // not positive dummy spell
+        case 28441:                                         // AB Effect 000 (Ashbringer)
         case 37675:                                         // Chaos Blast
         case 41519:                                         // Mark of Stormrage
         case 34877:                                         // Custodian of Time
         case 34700:                                         // Allergic Reaction
         case 31719:                                         // Suspension
-        case 43501:                                         // Siphon Soul (Hexlord Spell)
+        case 43501:                                         // Siphon Soul (Hex Lord Malacrass)
         case 30457:                                         // Complete vulnerability
-        case 30500:                                         // Death Coil by Grand Warlock Nethekurse in Shattered Halls
+        case 30500:                                         // Death Coil (Grand Warlock Nethekurse in Shattered Halls)
         case 24131:                                         // Wyvern Sting (Rank1)
         case 24134:                                         // Wyvern Sting (Rank2)
         case 24135:                                         // Wyvern Sting (Rank3)
@@ -3084,6 +3086,7 @@ void SpellMgr::LoadSpellCustomAttr()
             break;
         }
     }
+
     CreatureAI::FillAISpellInfo();
 }
 
