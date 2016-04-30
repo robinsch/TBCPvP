@@ -2250,7 +2250,7 @@ void Spell::prepare(SpellCastTargets * targets, Aura* triggeredByAura)
                 m_casttime = 0;
     }
 
-    if ((IsChanneledSpell(m_spellInfo) || m_casttime) && m_caster->GetTypeId() == TYPEID_PLAYER && m_caster->ToPlayer()->isMoving() && m_spellInfo->InterruptFlags & SPELL_INTERRUPT_FLAG_MOVEMENT)
+    if (((IsChanneledSpell(m_spellInfo) && !(m_spellInfo->AttributesEx5 & SPELL_ATTR_EX5_CAN_CHANNEL_WHEN_MOVING)) || m_casttime) && m_caster->GetTypeId() == TYPEID_PLAYER && m_caster->isMoving() && m_spellInfo->InterruptFlags & SPELL_INTERRUPT_FLAG_MOVEMENT)
     {
         SendCastResult(SPELL_FAILED_MOVING);
         finish(false);
@@ -2606,6 +2606,10 @@ void Spell::handle_immediate()
             m_caster->AddInterruptMask(m_spellInfo->ChannelInterruptFlags);
             SendChannelStart(duration);
         }
+
+        // Interrupt movement at channeled spells for creature case
+        if (m_caster->GetTypeId() == TYPEID_UNIT && m_caster->isMoving() && !(m_spellInfo->Attributes & SPELL_ATTR_EX5_CAN_CHANNEL_WHEN_MOVING))
+            m_caster->StopMoving();
     }
 
     // process immediate effects (items, ground, etc.) also initialize some variables
@@ -3773,7 +3777,7 @@ uint8 Spell::CanCast(bool strict)
 
     // cancel autorepeat spells if cast start when moving
     // (not wand currently autorepeat cast delayed to moving stop anyway in spell update code)
-    if (m_caster->GetTypeId() == TYPEID_PLAYER && m_caster->ToPlayer()->isMoving())
+    if (m_caster->GetTypeId() == TYPEID_PLAYER && m_caster->isMoving())
     {
         // skip stuck spell to allow use it in falling case and apply spell limitations at movement
         if ((!m_caster->HasUnitMovementFlag(MOVEFLAG_FALLINGFAR) || m_spellInfo->Effect[0] != SPELL_EFFECT_STUCK) &&

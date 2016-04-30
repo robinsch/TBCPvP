@@ -1541,6 +1541,12 @@ class Unit : public WorldObject
         uint32 GetUnitMovementFlags() const { return m_unit_movement_flags; }
         void SetUnitMovementFlags(uint32 f) { m_unit_movement_flags = f; }
 
+        bool isMoving() const { return HasUnitMovementFlag(MOVEFLAG_MOVING); }
+        bool isMovingOrTurning() const { return HasUnitMovementFlag(MOVEFLAG_TURNING); }
+
+        bool CanFly() const { return HasUnitMovementFlag(MOVEFLAG_CAN_FLY); }
+        bool IsFlying() const { return HasUnitMovementFlag(MOVEFLAG_FLYING2); }
+
         void SetControlled(bool apply, UnitState state, bool waitForFinalize = true);
         void SetFeared(bool apply/*, uint64 casterGUID = 0, uint32 spellID = 0*/);
         void SetConfused(bool apply, bool waitForFinalize = true);

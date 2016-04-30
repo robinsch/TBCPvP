@@ -2129,12 +2129,6 @@ class Player : public Unit, public GridObject<Player>
 
         void BuildTeleportAckMsg( WorldPacket *data, float x, float y, float z, float ang) const;
 
-        bool isMoving() const { return HasUnitMovementFlag(MOVEFLAG_MOVING); }
-        bool isMovingOrTurning() const { return HasUnitMovementFlag(MOVEFLAG_TURNING); }
-
-        bool CanFly() const { return HasUnitMovementFlag(MOVEFLAG_CAN_FLY); }
-        bool IsFlying() const { return HasUnitMovementFlag(MOVEFLAG_FLYING2); }
-
         void HandleFallDamage(MovementInfo& movementInfo);
         void HandleFallUnderMap();
 
