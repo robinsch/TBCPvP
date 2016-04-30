@@ -1284,7 +1284,7 @@ SpellMissInfo Spell::DoSpellHitOnUnit(Unit *unit, const uint32 effectMask)
         // send immunity message if target is immune
         if (m_diminishLevel == DIMINISHING_LEVEL_IMMUNE)
         {
-            m_caster->SendSpellMiss(unitTarget, m_spellInfo->Id, SPELL_MISS_IMMUNE);
+            //m_caster->SendSpellMiss(unitTarget, m_spellInfo->Id, SPELL_MISS_IMMUNE);
             return SPELL_MISS_IMMUNE;
         }
 
