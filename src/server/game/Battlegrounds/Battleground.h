@@ -192,8 +192,8 @@ enum ScoreType
 enum ArenaType
 {
     ARENA_TYPE_2v2          = 2,
-    ARENA_TYPE_SOLO_3v3     = 3, // Original 3v3 bracket
-    ARENA_TYPE_3v3          = 4,
+    ARENA_TYPE_SOLO_3v3     = 0, // Original 3v3 bracket
+    ARENA_TYPE_3v3          = 3,
     ARENA_TYPE_5v5          = 5
 };
 
