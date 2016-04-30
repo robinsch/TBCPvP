@@ -76,8 +76,8 @@ class SystemMgr
         static SystemMgr& Instance();
 
         //Maps and lists
-        typedef UNORDERED_MAP<int32, StringTextData> TextDataMap;
-        typedef UNORDERED_MAP<uint32, std::vector<ScriptPointMove> > PointMoveMap;
+        typedef std::unordered_map<int32, StringTextData> TextDataMap;
+        typedef std::unordered_map<uint32, std::vector<ScriptPointMove> > PointMoveMap;
 
         //Database
         void LoadScriptTexts();

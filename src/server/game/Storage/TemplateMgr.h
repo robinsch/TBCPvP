@@ -118,8 +118,8 @@ struct TemplateReputation
 };
 
 typedef std::map<uint32, std::vector<TemplateItem>> TemplateItems;
-typedef UNORDERED_MAP<uint32, std::vector<uint32> /*spellEntry*/> TemplateSpells;
-typedef UNORDERED_MAP<uint32, std::vector<TemplateReputation>> TemplateReputations;
+typedef std::unordered_map<uint32, std::vector<uint32> /*spellEntry*/> TemplateSpells;
+typedef std::unordered_map<uint32, std::vector<TemplateReputation>> TemplateReputations;
 
 class TemplateMgr
 {

@@ -667,7 +667,7 @@ class WorldSession
         // antidos protection
         bool EvaluateOpcode(WorldPacket& p, time_t time);
         uint32 GetMaxPacketCounterAllowed(uint16 opcode) const;
-        typedef UNORDERED_MAP<uint16, PacketCounter> PacketThrottlingMap;
+        typedef std::unordered_map<uint16, PacketCounter> PacketThrottlingMap;
         // mark this member as "mutable" so it can be modified even in const functions
         mutable PacketThrottlingMap _PacketThrottlingMap;
 

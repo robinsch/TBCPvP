@@ -26,7 +26,7 @@
 
 void WaypointStore::Free()
 {
-    for (UNORDERED_MAP<uint32, WaypointPath*>::const_iterator itr = waypoint_map.begin(); itr != waypoint_map.end(); ++itr)
+    for (std::unordered_map<uint32, WaypointPath*>::const_iterator itr = waypoint_map.begin(); itr != waypoint_map.end(); ++itr)
     {
         for (WaypointPath::const_iterator it = itr->second->begin(); it != itr->second->end(); ++it)
             delete *it;

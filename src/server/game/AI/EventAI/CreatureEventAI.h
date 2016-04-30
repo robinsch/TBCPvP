@@ -198,7 +198,7 @@ struct StringTextData
     uint32 Emote;
 };
 // Text Maps
-typedef UNORDERED_MAP<int32, StringTextData> CreatureEventAI_TextMap;
+typedef std::unordered_map<int32, StringTextData> CreatureEventAI_TextMap;
 
 struct CreatureEventAI_Action
 {
@@ -567,7 +567,7 @@ struct CreatureEventAI_Event
     CreatureEventAI_Action action[MAX_ACTIONS];
 };
 //Event_Map
-typedef UNORDERED_MAP<uint32, std::vector<CreatureEventAI_Event> > CreatureEventAI_Event_Map;
+typedef std::unordered_map<uint32, std::vector<CreatureEventAI_Event> > CreatureEventAI_Event_Map;
 
 struct CreatureEventAI_Summon
 {
@@ -581,7 +581,7 @@ struct CreatureEventAI_Summon
 };
 
 //EventSummon_Map
-typedef UNORDERED_MAP<uint32, CreatureEventAI_Summon> CreatureEventAI_Summon_Map;
+typedef std::unordered_map<uint32, CreatureEventAI_Summon> CreatureEventAI_Summon_Map;
 
 struct CreatureEventAIHolder
 {

@@ -242,7 +242,7 @@ enum LevelRequirementVsMode
 #pragma pack(pop)
 #endif
 
-typedef UNORDERED_MAP<Creature*, CreatureMover> CreatureMoveList;
+typedef std::unordered_map<Creature*, CreatureMover> CreatureMoveList;
 
 #define MAX_HEIGHT            100000.0f                     // can be use for find ground height at surface
 #define INVALID_HEIGHT       -100000.0f                     // for check, must be equal to VMAP_INVALID_HEIGHT, real value for unknown height is VMAP_INVALID_HEIGHT_VALUE

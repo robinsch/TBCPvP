@@ -664,8 +664,8 @@ struct SpellBonusEntry
     float  ap_dot_bonus;
 };
 
-typedef UNORDERED_MAP<uint32, SpellProcEventEntry> SpellProcEventMap;
-typedef UNORDERED_MAP<uint32, SpellBonusEntry>     SpellBonusMap;
+typedef std::unordered_map<uint32, SpellProcEventEntry> SpellProcEventMap;
+typedef std::unordered_map<uint32, SpellBonusEntry>     SpellBonusMap;
 
 struct SpellEnchantProcEntry
 {
@@ -674,7 +674,7 @@ struct SpellEnchantProcEntry
     uint32      procEx;
 };
 
-typedef UNORDERED_MAP<uint32, SpellEnchantProcEntry> SpellEnchantProcEventMap;
+typedef std::unordered_map<uint32, SpellEnchantProcEntry> SpellEnchantProcEventMap;
 
 #define ELIXIR_BATTLE_MASK    0x1
 #define ELIXIR_GUARDIAN_MASK  0x2
@@ -713,7 +713,7 @@ struct SpellTargetPosition
     float  target_Orientation;
 };
 
-typedef UNORDERED_MAP<uint32, SpellTargetPosition> SpellTargetPositionMap;
+typedef std::unordered_map<uint32, SpellTargetPosition> SpellTargetPositionMap;
 
 // Spell pet auras
 class PetAura
@@ -777,11 +777,11 @@ struct SpellChainNode
     uint8  rank;
 };
 
-typedef UNORDERED_MAP<uint32, SpellChainNode> SpellChainMap;
+typedef std::unordered_map<uint32, SpellChainNode> SpellChainMap;
 typedef std::multimap<uint32, uint32> SpellChainNext;
 
 //                 spell_id  req_spell
-typedef UNORDERED_MAP<uint32, uint32> SpellRequiredMap;
+typedef std::unordered_map<uint32, uint32> SpellRequiredMap;
 
 typedef std::multimap<uint32, uint32> SpellsRequiringSpellMap;
 
@@ -793,7 +793,7 @@ struct SpellLearnSkillNode
     uint32 maxvalue;                                        // 0  - max skill value for player level
 };
 
-typedef UNORDERED_MAP<uint32, SpellLearnSkillNode> SpellLearnSkillMap;
+typedef std::unordered_map<uint32, SpellLearnSkillNode> SpellLearnSkillMap;
 
 struct SpellLearnSpellNode
 {

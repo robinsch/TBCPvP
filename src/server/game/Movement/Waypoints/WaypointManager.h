@@ -41,7 +41,7 @@ class WaypointStore
 {
     private :
         uint32  records;
-        UNORDERED_MAP<uint32, WaypointPath*> waypoint_map;
+        std::unordered_map<uint32, WaypointPath*> waypoint_map;
 
     public:
         // Null Mutex is OK because WaypointMgr is initialized in the World thread before World is initialized

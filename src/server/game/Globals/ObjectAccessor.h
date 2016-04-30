@@ -48,7 +48,7 @@ class HashMapHolder
 {
     public:
 
-        typedef UNORDERED_MAP<uint64, T*> MapType;
+        typedef std::unordered_map<uint64, T*> MapType;
         typedef ACE_Thread_Mutex LockType;
 
         static void Insert(T* o)
@@ -92,8 +92,8 @@ class ObjectAccessor
 
     public:
 
-        typedef UNORDERED_MAP<uint64, Corpse*> Player2CorpsesMapType;
-        typedef UNORDERED_MAP<Player*, UpdateData>::value_type UpdateDataValueType;
+        typedef std::unordered_map<uint64, Corpse*> Player2CorpsesMapType;
+        typedef std::unordered_map<Player*, UpdateData>::value_type UpdateDataValueType;
 
         // returns object if is in world
         template<class T> static T* GetObjectInWorld(uint64 guid, T* /*typeSpecifier*/)
