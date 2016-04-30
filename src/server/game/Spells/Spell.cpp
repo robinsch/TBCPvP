@@ -1263,7 +1263,11 @@ SpellMissInfo Spell::DoSpellHitOnUnit(Unit *unit, const uint32 effectMask)
 
             // assisting case, healing and resurrection
             if (unit->hasUnitState(UNIT_STAT_ATTACK_PLAYER))
+            {
                 m_caster->SetContestedPvP();
+                if (m_caster->GetTypeId() == TYPEID_PLAYER)
+                    m_caster->ToPlayer()->UpdatePvP(true);
+            }
 
             if (unit->isInCombat() && IsAggressiveSpell(m_spellInfo, m_IsTriggeredSpell))
             {

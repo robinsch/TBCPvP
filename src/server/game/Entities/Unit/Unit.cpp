@@ -346,13 +346,6 @@ Unit::~Unit()
 
 void Unit::Update(uint32 p_time)
 {
-    /*if (p_time > m_AurasCheck)
-    {
-    m_AurasCheck = 2000;
-    _UpdateAura();
-    } else
-    m_AurasCheck -= p_time;*/
-
     // WARNING! Order of execution here is important, do not change.
     // Spells must be processed with event system BEFORE they go to _UpdateSpells.
     // Or else we may have some SPELL_STATE_FINISHED spells stalled in pointers, that is bad.
@@ -364,19 +357,12 @@ void Unit::Update(uint32 p_time)
     _UpdateSpells(p_time);
 
     // update combat timer
-    if (isInCombat() && GetCharmerOrOwnerPlayerOrPlayerItself())
+    if (isInCombat() && (GetTypeId() == TYPEID_PLAYER) || ((GetTypeId() == TYPEID_UNIT) && ToCreature()->isPet() && IsControlledByPlayer()))
     {
-        // Check UNIT_STAT_MELEE_ATTACKING or UNIT_STAT_CHASE (without UNIT_STAT_FOLLOW in this case) so pets can reach far away
-        // targets without stopping half way there and running off.
-        // These flags are reset after target dies or another command is given.
-        if (m_HostileRefManager.isEmpty())
-        {
-            // m_CombatTimer set at aura start and it will be freeze until aura removing
-            if (m_CombatTimer <= p_time)
-                ClearInCombat();
-            else
-                m_CombatTimer -= p_time;
-        }
+        if (m_CombatTimer <= p_time)
+            ClearInCombat();
+        else
+            m_CombatTimer -= p_time;
     }
 
     // update visibility notify timer
@@ -394,22 +380,19 @@ void Unit::Update(uint32 p_time)
             m_visibilityUpdateTimer -= p_time;
     }
 
-    //not implemented before 3.0.2
-    //if (!hasUnitState(UNIT_STAT_CASTING))
-    {
-        if (uint32 base_att = getAttackTimer(BASE_ATTACK))
-            setAttackTimer(BASE_ATTACK, (p_time >= base_att ? 0 : base_att - p_time));
-        if (uint32 ranged_att = getAttackTimer(RANGED_ATTACK))
-            setAttackTimer(RANGED_ATTACK, (p_time >= ranged_att ? 0 : ranged_att - p_time));
-        if (uint32 off_att = getAttackTimer(OFF_ATTACK))
-            setAttackTimer(OFF_ATTACK, (p_time >= off_att ? 0 : off_att - p_time));
-    }
+    // not implemented before 3.0.2
+    if (uint32 base_att = getAttackTimer(BASE_ATTACK))
+        setAttackTimer(BASE_ATTACK, (p_time >= base_att ? 0 : base_att - p_time));
+    if (uint32 ranged_att = getAttackTimer(RANGED_ATTACK))
+        setAttackTimer(RANGED_ATTACK, (p_time >= ranged_att ? 0 : ranged_att - p_time));
+    if (uint32 off_att = getAttackTimer(OFF_ATTACK))
+        setAttackTimer(OFF_ATTACK, (p_time >= off_att ? 0 : off_att - p_time));
 
     // update abilities available only for fraction of time
     UpdateReactives(p_time);
 
-    ModifyAuraState(AURA_STATE_HEALTHLESS_20_PERCENT, GetHealth() < GetMaxHealth()*0.20f);
-    ModifyAuraState(AURA_STATE_HEALTHLESS_35_PERCENT, GetHealth() < GetMaxHealth()*0.35f);
+    ModifyAuraState(AURA_STATE_HEALTHLESS_20_PERCENT, GetHealth() < GetMaxHealth() * 0.20f);
+    ModifyAuraState(AURA_STATE_HEALTHLESS_35_PERCENT, GetHealth() < GetMaxHealth() * 0.35f);
 
     i_motionMaster.UpdateMotion(p_time);
 }
@@ -9038,28 +9021,22 @@ void Unit::SetInCombatState(bool PvP, Unit* enemy, uint32 spellId)
     if (!isAlive())
         return;
 
-    if (PvP && GetTypeId() == TYPEID_PLAYER)
+    if (PvP)
     {
-        m_CombatTimer = 5150;
-
-        // Apply latency to combat timer
-        uint32 latency = ((Player*)this)->GetSession()->GetLatency();
-        if (latency > 150)
-            latency = 150;
-
-        // Reduce combat timer by latency (max. 150 ms)
-        m_CombatTimer -= latency;
+        m_CombatTimer = 5000;
 
         // Apply 1 second extra combat timer to gouge
         if (spellId == 38764)
             m_CombatTimer += 1000;
     }
 
-    if (GetTypeId() == TYPEID_PLAYER)
-        if (Pet* pet = ToPlayer()->GetPet())
-            pet->SetInCombatState(PvP);
+    // Pet and Guardian linking combat to owner
+    if (GetTypeId() == TYPEID_UNIT)
+        if (ToCreature()->isPet() || ToCreature()->isGuardian())
+            if (Unit* owner = GetCharmerOrOwnerPlayerOrPlayerItself())
+                owner->SetInCombatState(PvP);
 
-    if (isInCombat())
+    if (isInCombat() || hasUnitState(UNIT_STAT_EVADE))
         return;
 
     SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IN_COMBAT);
@@ -9071,8 +9048,6 @@ void Unit::SetInCombatState(bool PvP, Unit* enemy, uint32 spellId)
             if (m_currentSpells[CURRENT_GENERIC_SPELL]->m_spellInfo->Attributes & SPELL_ATTR_CANT_USED_IN_COMBAT)
                 InterruptSpell(CURRENT_GENERIC_SPELL);
         }
-
-        RemoveAurasDueToSpell(27089);
     }
     else
     {
@@ -9094,9 +9069,6 @@ void Unit::SetInCombatState(bool PvP, Unit* enemy, uint32 spellId)
         
         if (ToCreature()->isPet())
         {
-            if (Unit* owner = GetCharmerOrOwnerPlayerOrPlayerItself())
-                owner->SetInCombatState(PvP);
-
             UpdateSpeed(MOVE_RUN, true);
             UpdateSpeed(MOVE_SWIM, true);
             UpdateSpeed(MOVE_FLIGHT, true);
@@ -9116,23 +9088,20 @@ void Unit::ClearInCombat()
     RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IN_COMBAT);
 
     // Player's state will be cleared in Player::UpdateContestedPvP
-    if (GetTypeId() != TYPEID_PLAYER)
+    if (Creature* creature = ToCreature())
     {
-        Creature* creature = ToCreature();
         if (creature->GetCreatureTemplate() && creature->GetCreatureTemplate()->unit_flags & UNIT_FLAG_OOC_NOT_ATTACKABLE)
-            SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_OOC_NOT_ATTACKABLE);
+            SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_OOC_NOT_ATTACKABLE); // set immunity state to the one from db on evade
 
         clearUnitState(UNIT_STAT_ATTACK_PLAYER);
-    }
 
-    if (GetTypeId() != TYPEID_PLAYER && ToCreature()->isPet())
-    {
-        if (Unit *owner = GetOwner())
-            for (uint8 i = 0; i < MAX_MOVE_TYPE; ++i)
-            {
+        if (creature->isPet() || creature->isGuardian())
+        {
+            if (Unit *owner = GetOwner())
+                for (uint8 i = 0; i < MAX_MOVE_TYPE; ++i)
                 if (owner->GetSpeedRate(UnitMoveType(i)) > GetSpeedRate(UnitMoveType(i)))
-                    SetSpeed(UnitMoveType(i), owner->GetSpeedRate(UnitMoveType(i)) * 1.10f, true);
-            }
+                    SetSpeed(UnitMoveType(i), owner->GetSpeedRate(UnitMoveType(i)), true);
+        }
     }
     else if (!isCharmed())
         return;
@@ -11820,13 +11789,13 @@ void Unit::SetContestedPvP(Player *attackedPlayer)
         player->addUnitState(UNIT_STAT_ATTACK_PLAYER);
         player->SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_CONTESTED_PVP);
         // call MoveInLineOfSight for nearby contested guards
-        player->SetVisibility(player->GetVisibility());
+        UpdateObjectVisibility();
     }
     if (!hasUnitState(UNIT_STAT_ATTACK_PLAYER))
     {
         addUnitState(UNIT_STAT_ATTACK_PLAYER);
         // call MoveInLineOfSight for nearby contested guards
-        SetVisibility(GetVisibility());
+        UpdateObjectVisibility();
     }
 }
 

@@ -467,7 +467,7 @@ struct cthunAI : public Scripted_NoMovementAI
     uint64 StomachEnterTarget;
 
     //Stomach map, bool = true then in stomach
-    UNORDERED_MAP<uint64, bool> Stomach_Map;
+    std::unordered_map<uint64, bool> Stomach_Map;
 
     void Reset()
     {
@@ -526,7 +526,7 @@ struct cthunAI : public Scripted_NoMovementAI
         if (Stomach_Map.empty())
             return NULL;
 
-        UNORDERED_MAP<uint64, bool>::iterator i = Stomach_Map.begin();
+        std::unordered_map<uint64, bool>::iterator i = Stomach_Map.begin();
 
         std::list<Unit*> temp;
         std::list<Unit*>::iterator j;
@@ -665,7 +665,7 @@ struct cthunAI : public Scripted_NoMovementAI
 
                     DoCast(me, SPELL_RED_COLORATION, true);
 
-                    UNORDERED_MAP<uint64, bool>::iterator i = Stomach_Map.begin();
+                    std::unordered_map<uint64, bool>::iterator i = Stomach_Map.begin();
 
                     //Kick all players out of stomach
                     while (i != Stomach_Map.end())
@@ -697,7 +697,7 @@ struct cthunAI : public Scripted_NoMovementAI
                 if (StomachAcidTimer <= diff)
                 {
                     //Apply aura to all players in stomach
-                    UNORDERED_MAP<uint64, bool>::iterator i = Stomach_Map.begin();
+                    std::unordered_map<uint64, bool>::iterator i = Stomach_Map.begin();
 
                     while (i != Stomach_Map.end())
                     {
