@@ -21,14 +21,11 @@
 #ifndef __InstanceSaveMgr_H
 #define __InstanceSaveMgr_H
 
+#include "Common.h"
 #include "Define.h"
-#include "UnorderedMap.h"
 #include "DatabaseEnv.h"
 
 #include <ace/Singleton.h>
-#include <ace/Thread_Mutex.h>
-#include <list>
-#include <map>
 
 struct InstanceTemplate;
 struct MapEntry;

@@ -20,9 +20,8 @@
 #ifndef _FORMATIONS_H
 #define _FORMATIONS_H
 
+#include "Common.h"
 #include "Define.h"
-#include "UnorderedMap.h"
-#include <map>
 
 class Creature;
 class CreatureGroup;

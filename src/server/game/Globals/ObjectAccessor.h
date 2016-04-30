@@ -21,8 +21,8 @@
 #ifndef TRINITY_OBJECTACCESSOR_H
 #define TRINITY_OBJECTACCESSOR_H
 
+#include "Common.h"
 #include "Define.h"
-#include "UnorderedMap.h"
 
 #include "ByteBuffer.h"
 #include "UpdateData.h"
@@ -32,8 +32,6 @@
 #include "Player.h"
 
 #include <ace/Singleton.h>
-#include <ace/Thread_Mutex.h>
-#include <set>
 
 class Creature;
 class Corpse;

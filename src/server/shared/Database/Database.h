@@ -21,10 +21,8 @@
 #define DATABASE_H
 
 #include "Threading.h"
-#include "UnorderedMap.h"
 #include "SqlDelayThread.h"
 
-#include <ace/Thread_Mutex.h>
 #include <ace/Guard_T.h>
 
 #ifdef _WIN32
