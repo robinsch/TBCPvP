@@ -8979,7 +8979,7 @@ void Unit::SetInCombatWith(Unit* enemy, uint32 spellId)
 
 void Unit::CombatStart(Unit* target, bool initialAggro, uint32 spellId)
 {
-    if (initialAggro)
+    if (initialAggro && !target->hasUnitState(UNIT_STAT_EVADE))
     {
         if (!target->IsStandState())
             target->SetStandState(UNIT_STAND_STATE_STAND);
