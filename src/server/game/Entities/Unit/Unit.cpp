@@ -6402,25 +6402,29 @@ bool Unit::HandleProcTriggerSpell(Unit *pVictim, uint32 damage, Aura* triggeredB
                         // Judgement of Light and Judgement of Wisdom
                         if (auraSpellInfo->SpellFamilyFlags & 0x0000000000080000LL)
                         {
+                            // Seal of Blood (It will NOT activate Judgement of Light and Judgement of Wisdom)
+                            if (procSpell && procSpell->Id == 31893)
+                                return false;
+
                             switch (auraSpellInfo->Id)
                             {
                                 // Judgement of Light
-                                case 20185: trigger_spell_id = 20267;break;  // Rank 1
-                                case 20344: trigger_spell_id = 20341;break;  // Rank 2
-                                case 20345: trigger_spell_id = 20342;break;  // Rank 3
-                                case 20346: trigger_spell_id = 20343;break;  // Rank 4
-                                case 27162: trigger_spell_id = 27163;break;  // Rank 5
+                                case 20185: trigger_spell_id = 20267; break;  // Rank 1
+                                case 20344: trigger_spell_id = 20341; break;  // Rank 2
+                                case 20345: trigger_spell_id = 20342; break;  // Rank 3
+                                case 20346: trigger_spell_id = 20343; break;  // Rank 4
+                                case 27162: trigger_spell_id = 27163; break;  // Rank 5
                                 // Judgement of Wisdom
-                                case 20186: trigger_spell_id = 20268;break;  // Rank 1
-                                case 20354: trigger_spell_id = 20352;break;  // Rank 2
-                                case 20355: trigger_spell_id = 20353;break;  // Rank 3
-                                case 27164: trigger_spell_id = 27165;break;  // Rank 4
+                                case 20186: trigger_spell_id = 20268; break;  // Rank 1
+                                case 20354: trigger_spell_id = 20352; break;  // Rank 2
+                                case 20355: trigger_spell_id = 20353; break;  // Rank 3
+                                case 27164: trigger_spell_id = 27165; break;  // Rank 4
                                 default:
                                     sLog->outError("Unit::HandleProcTriggerSpell: Spell %u miss posibly Judgement of Light/Wisdom", auraSpellInfo->Id);
                                 return false;
                             }
                             SpellEntry const *triggerSpell = sSpellStore.LookupEntry(trigger_spell_id);
-                            int32 healAmount = triggerSpell->EffectBasePoints[0] + 1;
+                            int32 amount = triggerSpell->EffectBasePoints[0] + 1;
 
                             if (Unit* auraCaster = triggeredByAura->GetCaster())
                             {
@@ -6431,13 +6435,13 @@ bool Unit::HandleProcTriggerSpell(Unit *pVictim, uint32 damage, Aura* triggeredB
                                     // Justicar 2-piece bonus (Holy)
                                     if ((*i)->GetSpellProto()->Id == 37182)
                                     {
-                                        healAmount += (*i)->GetModifier()->m_amount;
+                                        amount += (*i)->GetModifier()->m_amount;
                                         break;
                                     }
                                 }
                             }
 
-                            pVictim->CastCustomSpell(pVictim, trigger_spell_id, &healAmount, NULL, NULL, true, castItem, triggeredByAura);
+                            pVictim->CastCustomSpell(pVictim, trigger_spell_id, &amount, NULL, NULL, true, castItem, triggeredByAura);
                             return false;
                         }
                         // Illumination
@@ -8189,8 +8193,6 @@ bool Unit::isSpellCrit(Unit *pVictim, SpellEntry const *spellProto, SpellSchoolM
     // only players use intelligence for critical chance computations
     if (Player* modOwner = GetSpellModOwner())
         modOwner->ApplySpellMod(spellProto->Id, SPELLMOD_CRITICAL_CHANCE, crit_chance);
-
-    sLog->outError("Crit chance: %f", crit_chance);
 
     crit_chance = crit_chance > 0.0f ? crit_chance : 0.0f;
     if (roll_chance_f(crit_chance))
