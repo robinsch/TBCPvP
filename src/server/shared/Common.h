@@ -99,6 +99,7 @@
 #include <queue>
 #include <sstream>
 #include <algorithm>
+#include <atomic>
 
 #include "LockedQueue.h"
 #include "Threading.h"

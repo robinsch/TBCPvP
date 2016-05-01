@@ -463,6 +463,9 @@ void Transport::TeleportTransport(uint32 newMapid, float x, float y, float z)
 
 bool Transport::AddPassenger(Player* passenger)
 {
+    if (!IsInWorld())
+        return false;
+
     if (m_passengers.find(passenger) == m_passengers.end())
     {
         sLog->outDetail("Player %s boarded transport %s.", passenger->GetName(), GetName());

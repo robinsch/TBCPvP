@@ -12041,20 +12041,21 @@ template void Unit::MonsterMoveByPath<PathNode>(const Path<PathNode> &, uint32, 
 template void Unit::SendMonsterMoveByPath<PathNode>(const Path<PathNode> &, uint32, uint32, uint32);
 template void Unit::SendMonsterMoveByPath<TaxiPathNodePtr, const TaxiPathNodeEntry>(const Path<TaxiPathNodePtr, const TaxiPathNodeEntry> &, uint32, uint32, uint32);
 
-bool Unit::SetPosition(float x, float y, float z, float orientation, bool teleport)
+bool Unit::UpdatePosition(float x, float y, float z, float orientation, bool teleport)
 {
     // prevent crash when a bad coord is sent by the client
     if (!Trinity::IsValidMapCoord(x, y, z, orientation))
     {
-        sLog->outDebug("Unit::SetPosition(%f, %f, %f) .. bad coordinates!", x, y, z);
+        sLog->outDebug("Unit::UpdatePosition(%f, %f, %f) .. bad coordinates!", x, y, z);
         return false;
     }
 
     bool turn = (GetOrientation() != orientation);
     bool relocated = (teleport || GetPositionX() != x || GetPositionY() != y || GetPositionZ() != z);
 
+    // TODO: Check if orientation transport offset changed instead of only global orientation
     if (turn)
-    RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_TURNING);
+        RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_TURNING);
 
     if (relocated)
     {
@@ -12062,9 +12063,9 @@ bool Unit::SetPosition(float x, float y, float z, float orientation, bool telepo
 
         // move and update visible state if need
         if (GetTypeId() == TYPEID_PLAYER)
-            GetMap()->PlayerRelocation((Player*)this, x, y, z, orientation);
+            GetMap()->PlayerRelocation(ToPlayer(), x, y, z, orientation);
         else
-            GetMap()->CreatureRelocation(this->ToCreature(), x, y, z, orientation);
+            GetMap()->CreatureRelocation(ToCreature(), x, y, z, orientation);
     }
     else if (turn)
         SetOrientation(orientation);

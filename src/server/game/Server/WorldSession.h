@@ -209,6 +209,8 @@ class WorldSession
 
         uint32 GetLatency() const { return m_latency; }
         void SetLatency(uint32 latency) { m_latency = latency; }
+        void ResetClientTimeDelay() { m_clientTimeDelay = 0; }
+
         uint32 getDialogStatus(Player* player, Object* questgiver, uint32 defstatus);
 
         time_t m_timeOutTime;
@@ -690,7 +692,8 @@ class WorldSession
         bool m_playerSave;
         LocaleConstant m_sessionDbcLocale;
         int m_sessionDbLocaleIndex;
-        uint32 m_latency;
+        std::atomic<uint32> m_latency;
+        std::atomic<uint32> m_clientTimeDelay;
 
         uint32 m_expireTime;
         bool m_forceExit;

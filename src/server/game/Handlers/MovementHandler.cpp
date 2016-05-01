@@ -227,7 +227,7 @@ void WorldSession::HandleMoveTeleportAck(WorldPacket& recv_data)
 
     WorldLocation const& dest = plMover->GetTeleportDest();
 
-    plMover->SetPosition(dest, true);
+    plMover->UpdatePosition(dest, true);
 
     uint32 newzone = plMover->GetZoneId();
 
@@ -260,42 +260,33 @@ void WorldSession::HandleMoveTeleportAck(WorldPacket& recv_data)
 
 void WorldSession::HandleMovementOpcodes(WorldPacket & recv_data)
 {
+    uint16 opcode = recv_data.GetOpcode();
     Unit *mover = _player->m_mover;
 
     ASSERT(mover != NULL);                                  // there must always be a mover
 
-    Player *plMover = mover->GetTypeId() == TYPEID_PLAYER ? mover->ToPlayer() : NULL;
+    Player *plrMover = mover->ToPlayer();
 
     // ignore, waiting processing in WorldSession::HandleMoveWorldportAckOpcode and WorldSession::HandleMoveTeleportAck
-    if (plMover && plMover->IsBeingTeleported())
+    if (plrMover && plrMover->IsBeingTeleported())
     {
         recv_data.rpos(recv_data.wpos());                   // prevent warnings spam
         return;
     }
-
-    //get opcode
-    uint16 opcode = recv_data.GetOpcode();
 
     /* extract packet */
     MovementInfo movementInfo;
     recv_data >> movementInfo;
     /*----------------*/
 
-    /*if (recv_data.size() != recv_data.rpos())
-    {
-        sLog->outError("MovementHandler: player %s (guid %d, account %u) sent a packet (opcode %u) that is %u bytes larger than it should be. Kicked as cheater.", _player->GetName(), _player->GetGUIDLow(), _player->GetSession()->GetAccountId(), opcode, recv_data.size() - recv_data.rpos());
-        KickPlayer();
-        return;
-    }*/
-
     if (!Trinity::IsValidMapCoord(movementInfo.GetPos()->GetPositionX(), movementInfo.GetPos()->GetPositionY(), movementInfo.GetPos()->GetPositionZ(), movementInfo.GetPos()->GetOrientation()))
+    {
+        recv_data.rpos(recv_data.wpos());                   // prevent warnings spam
         return;
+    }
 
     //Save movement flags
     mover->SetUnitMovementFlags(movementInfo.GetMovementFlags());
-
-    if (mover->IsSitState() && movementInfo.GetMovementFlags() & (MOVEFLAG_MOVING | MOVEFLAG_TURNING))
-        mover->SetStandState(UNIT_STAND_STATE_STAND);
 
     /* handle special cases */
     if (movementInfo.HasMovementFlag(MOVEFLAG_ONTRANSPORT))
@@ -303,14 +294,20 @@ void WorldSession::HandleMovementOpcodes(WorldPacket & recv_data)
         // transports size limited
         // (also received at zeppelin/lift leave by some reason with t_* as absolute in continent coordinates, can be safely skipped)
         if (movementInfo.GetTransportPos()->GetPositionX() > 50 || movementInfo.GetTransportPos()->GetPositionY() > 50 || movementInfo.GetTransportPos()->GetPositionZ() > 50)
+        {
+            recv_data.rpos(recv_data.wpos());                   // prevent warnings spam
             return;
+        }
 
         if (!Trinity::IsValidMapCoord(movementInfo.GetPos()->GetPositionX() + movementInfo.GetTransportPos()->GetPositionX(), movementInfo.GetPos()->GetPositionY() + movementInfo.GetTransportPos()->GetPositionY(),
             movementInfo.GetPos()->GetPositionZ() + movementInfo.GetTransportPos()->GetPositionZ(), movementInfo.GetPos()->GetOrientation() + movementInfo.GetTransportPos()->GetOrientation()))
+        {
+            recv_data.rpos(recv_data.wpos());                   // prevent warnings spam
             return;
+        }
 
         // if we boarded a transport, add us to it
-        if (plMover && !plMover->m_transport)
+        if (plrMover && !plrMover->m_transport)
         {
             // elevators also cause the client to send MOVEFLAG_ONTRANSPORT - just unmount if the guid can be found in the transport list
             for (MapManager::TransportSet::iterator iter = sMapMgr->m_Transports.begin(); iter != sMapMgr->m_Transports.end(); ++iter)
@@ -318,38 +315,43 @@ void WorldSession::HandleMovementOpcodes(WorldPacket & recv_data)
                 if ((*iter)->GetGUID() == movementInfo.t_guid)
                 {
                     // unmount before boarding
-                    plMover->RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
+                    plrMover->RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
 
-                    plMover->m_transport = (*iter);
-                    (*iter)->AddPassenger(plMover);
+                    plrMover->m_transport = (*iter);
+                    (*iter)->AddPassenger(plrMover);
                     break;
                 }
             }
         }
     }
-    else if (plMover && plMover->m_transport)               // if we were on a transport, leave
+    else if (plrMover && plrMover->m_transport)               // if we were on a transport, leave
     {
-        plMover->m_transport->RemovePassenger(plMover);
-        plMover->m_transport = NULL;
+        plrMover->m_transport->RemovePassenger(plrMover);
+        plrMover->m_transport = nullptr;
         movementInfo.ClearTransportData();
     }
 
     // fall damage generation (ignore in flight case that can be triggered also at lags in moment teleportation to another map).
-    if (opcode == MSG_MOVE_FALL_LAND && plMover && !plMover->isInFlight())
-        plMover->HandleFallDamage(movementInfo);
+    if (opcode == MSG_MOVE_FALL_LAND && plrMover && !plrMover->isInFlight())
+        plrMover->HandleFallDamage(movementInfo);
 
-    if (plMover && (movementInfo.HasMovementFlag(MOVEFLAG_SWIMMING) != plMover->IsInWater()))
+    if (plrMover && (movementInfo.HasMovementFlag(MOVEFLAG_SWIMMING) != plrMover->IsInWater()))
     {
         // now client not include swimming flag in case jumping under water
-        plMover->SetInWater(!plMover->IsInWater() || plMover->GetBaseMap()->IsUnderWater(movementInfo.GetPos()->GetPositionX(), movementInfo.GetPos()->GetPositionY(), movementInfo.GetPos()->GetPositionZ()));
+        plrMover->SetInWater(!plrMover->IsInWater() || plrMover->GetBaseMap()->IsUnderWater(movementInfo.GetPos()->GetPositionX(), movementInfo.GetPos()->GetPositionY(), movementInfo.GetPos()->GetPositionZ()));
     }
 
-    if (plMover)
-        sAnticheatMgr->StartHackDetection(plMover, movementInfo, opcode);
+    if (plrMover)
+        sAnticheatMgr->StartHackDetection(plrMover, movementInfo, opcode);
+
+    uint32 mstime = getMSTime();
+    /*----------------------*/
+    if (m_clientTimeDelay == 0)
+        m_clientTimeDelay = mstime - movementInfo.time;
 
     /* process position-change */
-    recv_data.put<uint32>(5, getMSTime());                  // offset flags(4) + unk(1)
     WorldPacket data(opcode, mover->GetPackGUID().size() + recv_data.size());
+    movementInfo.time = movementInfo.time + m_clientTimeDelay;
     data << mover->GetPackGUID();
     data.append(recv_data.contents(), recv_data.size());
     if (mover->isCharmed() && mover->GetCharmer())
@@ -358,88 +360,40 @@ void WorldSession::HandleMovementOpcodes(WorldPacket & recv_data)
         mover->SendMessageToSet(&data, false);
 
     mover->m_movementInfo = movementInfo;
-    mover->SetPosition(movementInfo.GetPos()->GetPositionX(), movementInfo.GetPos()->GetPositionY(), movementInfo.GetPos()->GetPositionZ(), movementInfo.GetPos()->GetOrientation());
+    
+    mover->UpdatePosition(movementInfo.pos);
 
-    if (plMover)                                            // nothing is charmed, or player charmed
+    if (plrMover)                                            // nothing is charmed, or player charmed
     {
-        if (opcode == MSG_MOVE_FALL_LAND || plMover->m_lastFallTime > movementInfo.GetFallTime() || plMover->m_lastFallZ < movementInfo.GetPos()->GetPositionZ())
-            plMover->SetFallInformation(movementInfo.GetFallTime(), movementInfo.GetPos()->GetPositionZ());
+        if (mover->IsSitState() && movementInfo.GetMovementFlags() & (MOVEFLAG_MOVING | MOVEFLAG_TURNING))
+        mover->SetStandState(UNIT_STAND_STATE_STAND);
 
-        // we should add the check only for class hunter
-        if (plMover->isMovingOrTurning())
-            plMover->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
+        plrMover->UpdateFallInformationIfNeed(movementInfo, opcode);
 
-        // Extra protection against flyhackers
-        float MAX_WSG   = 377.5f;
-        float MAX_AB    = 35.0f;
-        float MAX_EOTS  = 1286.5f;
-        float MAX_BE_NA = 20.0f;
-        float MAX_RUINS = 45.0f;
-        if (plMover->InBattleGround())
+        if (plrMover->InBattleGround())
         {
-            bool trigger = false;
-            switch (plMover->GetMapId())
-            {
-                case 489: // Warsong Gulch
-                    if (movementInfo.GetPos()->GetPositionZ() > MAX_WSG && GetSecurity() < SEC_MODERATOR)
-                        trigger = true;
-                    break;
-                case 529: // Arathi Basin
-                    if (movementInfo.GetPos()->GetPositionZ() > MAX_AB && GetSecurity() < SEC_MODERATOR)
-                        trigger = true;
-                    break;
-                case 566: // Eye of the Storm
-                    if (movementInfo.GetPos()->GetPositionZ() > MAX_EOTS && GetSecurity() < SEC_MODERATOR)
-                        trigger = true;
-                    break;
-                case 562: // Blade's Edge Arena
-                case 559: // Nagrand Arena
-                    if (movementInfo.GetPos()->GetPositionZ() > MAX_BE_NA && GetSecurity() < SEC_MODERATOR)
-                        trigger = true;
-                    break;
-                case 572: // Ruins of Lordaeron
-                    if (movementInfo.GetPos()->GetPositionZ() > MAX_RUINS && GetSecurity() < SEC_MODERATOR)
-                        trigger = true;
-                    break;
-            }
-
-            if (trigger)
-            {
-                LoginDatabase.PExecute("INSERT INTO account_banned VALUES ('%u', UNIX_TIMESTAMP(), UNIX_TIMESTAMP()+%u, 'Server', 'AUTO SUSPENSION: Player was above normal possible height in BG or arena map, most likely hacking.', '1')", GetAccountId(), 86400); // suspend for 1 day
-                sLog->outError("ARENA: Player %s, GUID: %i above normal height in map: %i. (possible hacking)", plMover->GetName(), plMover->GetGUID(), plMover->GetMapId());
-                KickPlayer();
-                trigger = false;
-            }
-        }
-
-        // Player leaving neutral duelling area, teleport back.
-        if (plMover->GetAreaId() == 214 && !(plMover->isGameMaster()))
-            plMover->TeleportTo(0, 4273.06f, -2774.95f, 5.65f, 4.41f);
-
-        if (plMover->InBattleGround())
-        {
-            switch (plMover->GetMapId())
+            switch (plrMover->GetMapId())
             {
                 case 562: // Blade's Edge Arena
                     if (movementInfo.GetPos()->GetPositionZ() < -5.0f)
-                        plMover->HandleFallUnderMap();
+                        plrMover->HandleFallUnderMap();
                         break;
                 case 559: // Nagrand Arena
                     if (movementInfo.GetPos()->GetPositionZ() < 6.0f)
-                        plMover->HandleFallUnderMap();
+                        plrMover->HandleFallUnderMap();
                     break;
                 case 572: // Ruins of Lordaeron
                     if (movementInfo.GetPos()->GetPositionZ() < 20.0f)
-                        plMover->HandleFallUnderMap();
+                        plrMover->HandleFallUnderMap();
                     break;
                 default: // battlegrounds
                     if (movementInfo.GetPos()->GetPositionZ() < -250.0f)
-                        plMover->HandleFallUnderMap();
+                        plrMover->HandleFallUnderMap();
                     break;
             }
         }
         else if (movementInfo.GetPos()->GetPositionZ() < -500.0f)
-            plMover->HandleFallUnderMap();
+            plrMover->HandleFallUnderMap();
     }
 }
 

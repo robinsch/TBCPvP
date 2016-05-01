@@ -6380,48 +6380,17 @@ void Player::removeActionButton(uint8 button)
     sLog->outDetail("Action Button '%u' Removed from Player '%u'", button, GetGUIDLow());
 }
 
-bool Player::SetPosition(float x, float y, float z, float orientation, bool teleport)
+bool Player::UpdatePosition(float x, float y, float z, float orientation, bool teleport)
 {
-    // prevent crash when a bad coord is sent by the client
-    if (!Trinity::IsValidMapCoord(x, y, z, orientation))
-    {
-        sLog->outDebug("Player::SetPosition(%f, %f, %f, %f, %d) .. bad coordinates for player %d!", x, y, z, orientation, teleport, GetGUIDLow());
+    if (!Unit::UpdatePosition(x, y, z, orientation, teleport))
         return false;
-    }
 
-    Map *m = GetMap();
-
-    const float old_x = GetPositionX();
-    const float old_y = GetPositionY();
-    const float old_z = GetPositionZ();
-    const float old_r = GetOrientation();
-
-    if (teleport || old_x != x || old_y != y || old_z != z || old_r != orientation)
-    {
-        if (teleport || old_x != x || old_y != y || old_z != z)
-            RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_MOVE | AURA_INTERRUPT_FLAG_TURNING);
-        else
-            RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_TURNING);
-
-        // move and update visible state if need
-        m->PlayerRelocation(this, x, y, z, orientation);
-
-        // reread after Map::Relocation
-        m = GetMap();
-        x = GetPositionX();
-        y = GetPositionY();
-        z = GetPositionZ();
-
-        // group update
-        if (GetGroup() && (old_x != x || old_y != y))
-            SetGroupUpdateFlag(GROUP_UPDATE_FLAG_POSITION);
-    }
+    // group update
+    if (GetGroup())
+        SetGroupUpdateFlag(GROUP_UPDATE_FLAG_POSITION);
 
     // code block for underwater state update
-    UpdateUnderwaterState(m, x, y, z);
-
-    if (GetTrader() && !IsWithinDistInMap(GetTrader(), 5))
-        GetSession()->SendCancelTrade();
+    UpdateUnderwaterState(GetMap(), x, y, z);
 
     CheckAreaExploreAndOutdoor();
 
@@ -22656,4 +22625,10 @@ void Player::SendSummonRequestFrom(Unit* summoner)
     data << uint32(summoner->GetZoneId());                     // summoner zone
     data << uint32(MAX_PLAYER_SUMMON_DELAY * IN_MILLISECONDS); // auto decline after msecs
     GetSession()->SendPacket(&data);
+}
+
+void Player::UpdateFallInformationIfNeed(MovementInfo const& minfo, uint16 opcode)
+{
+    if (m_lastFallTime >= minfo.fallTime || m_lastFallZ <= minfo.pos.GetPositionZ() || opcode == MSG_MOVE_FALL_LAND)
+        SetFallInformation(minfo.fallTime, minfo.pos.GetPositionZ());
 }

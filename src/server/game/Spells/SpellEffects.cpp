@@ -3655,7 +3655,7 @@ void Spell::EffectDistract(uint32 /*i*/)
         WorldPacket data;
         unitTarget->ToPlayer()->BuildTeleportAckMsg(&data, unitTarget->GetPositionX(), unitTarget->GetPositionY(), unitTarget->GetPositionZ(), angle);
         unitTarget->ToPlayer()->GetSession()->SendPacket(&data);
-        unitTarget->ToPlayer()->SetPosition(unitTarget->GetPositionX(), unitTarget->GetPositionY(), unitTarget->GetPositionZ(), angle, false);
+        unitTarget->ToPlayer()->UpdatePosition(unitTarget->GetPositionX(), unitTarget->GetPositionY(), unitTarget->GetPositionZ(), angle, false);
     }
     else
     {
