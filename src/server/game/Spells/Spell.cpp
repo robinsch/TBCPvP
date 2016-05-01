@@ -1189,21 +1189,6 @@ SpellMissInfo Spell::DoSpellHitOnUnit(Unit *unit, const uint32 effectMask)
         return SPELL_MISS_IMMUNE;
     }
 
-    // Seal Twisting Hack fix due to bugged OregonCore proc event handling
-    if (m_spellInfo->Id == 20424)
-    {
-        if (m_caster->GetTypeId() == TYPEID_PLAYER)
-        {
-            if (Player* owner = m_caster->ToPlayer())
-            {
-                if (owner->HasAura(31892,0))         // Seal of Blood
-                    owner->CastSpell(unitTarget, 31893, 0, 0, 0);
-                else if (owner->HasAura(31895,0))    // Seal of Justice
-                    owner->CastSpell(unitTarget, 20170, 0, 0, 0);
-            }
-        }
-    }
-
     if (m_caster != unit)
     {
         if (unit->GetCharmerOrOwnerGUID() != m_caster->GetGUID())
