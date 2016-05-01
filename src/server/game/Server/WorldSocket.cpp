@@ -868,7 +868,7 @@ int WorldSocket::HandleAuthSession (WorldPacket& recvPacket)
     return 0;
 }
 
-int WorldSocket::HandlePing (WorldPacket& recvPacket)
+bool WorldSocket::HandlePing(WorldPacket& recvPacket)
 {
     uint32 ping;
     uint32 latency;
@@ -886,7 +886,7 @@ int WorldSocket::HandlePing (WorldPacket& recvPacket)
         diff_time -= m_LastPingTime;
         m_LastPingTime = cur_time;
 
-        if (diff_time < ACE_Time_Value (27))
+        if (diff_time < ACE_Time_Value(27))
         {
             ++m_OverSpeedPings;
 
@@ -898,11 +898,8 @@ int WorldSocket::HandlePing (WorldPacket& recvPacket)
 
                 if (m_Session && m_Session->GetSecurity() == SEC_PLAYER)
                 {
-                    sLog->outError  ("WorldSocket::HandlePing: Player kicked for "
-                                    "over-speed pings address = %s",
-                                    GetRemoteAddress().c_str());
-
-                    return -1;
+                    sLog->outError  ("WorldSocket::HandlePing: Player kicked for over-speed pings address = %s", GetRemoteAddress().c_str());
+                    return false;
                 }
             }
         }
@@ -910,25 +907,25 @@ int WorldSocket::HandlePing (WorldPacket& recvPacket)
             m_OverSpeedPings = 0;
     }
 
-    // critical section
     {
-        ACE_GUARD_RETURN (LockType, Guard, m_SessionLock, -1);
+        ACE_GUARD_RETURN(LockType, Guard, m_SessionLock, -1);
 
         if (m_Session)
-            m_Session->SetLatency (latency);
+        {
+            m_Session->SetLatency(latency);
+            m_Session->ResetClientTimeDelay();
+        }
         else
         {
-            sLog->outError ("WorldSocket::HandlePing: peer sent CMSG_PING, "
-                            "but is not authenticated or got recently kicked, "
-                            " address = %s",
-                            GetRemoteAddress().c_str());
-             return -1;
+            sLog->outError ("WorldSocket::HandlePing: peer sent CMSG_PING, but is not authenticated or got recently kicked, address = %s", GetRemoteAddress().c_str());
+            return false;
         }
     }
 
-    WorldPacket packet (SMSG_PONG, 4);
+    WorldPacket packet(SMSG_PONG, 4);
     packet << ping;
-    return SendPacket (packet);
+    return SendPacket(packet);
+    return true;
 }
 
 int WorldSocket::iSendPacket (const WorldPacket& pct)
