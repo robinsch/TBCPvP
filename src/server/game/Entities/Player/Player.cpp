@@ -875,10 +875,6 @@ Player::Player (WorldSession *session): Unit()
 
     // Player summoning
     m_summon_expire = 0;
-    m_summon_mapid = 0;
-    m_summon_x = 0.0f;
-    m_summon_y = 0.0f;
-    m_summon_z = 0.0f;
 
     //Default movement to run mode
     m_unit_movement_flags = 0;
@@ -6430,15 +6426,6 @@ bool Player::SetPosition(float x, float y, float z, float orientation, bool tele
     CheckAreaExploreAndOutdoor();
 
     return true;
-}
-
-void Player::SaveRecallPosition()
-{
-    m_recallMap = GetMapId();
-    m_recallX = GetPositionX();
-    m_recallY = GetPositionY();
-    m_recallZ = GetPositionZ();
-    m_recallO = GetOrientation();
 }
 
 void Player::SendMessageToSet(WorldPacket *data, bool self)
@@ -20994,7 +20981,7 @@ void Player::SummonIfPossible(bool agree)
 
     m_summon_expire = 0;
 
-    TeleportTo(m_summon_mapid, m_summon_x, m_summon_y, m_summon_z, GetOrientation());
+    TeleportTo(m_summon_location);
 }
 
 void Player::RemoveItemDurations(Item *item)
@@ -22641,4 +22628,32 @@ void Player::learnHigherTalentRanks(uint32 spellEntry)
         default:
             break;
     }
+}
+
+bool Player::HasSummonPending() const
+{
+    return m_summon_expire >= time(nullptr);
+}
+
+void Player::SendSummonRequestFrom(Unit* summoner)
+{
+    if (!summoner)
+        return;
+
+    // Player already has active summon request
+    if (HasSummonPending())
+        return;
+
+    // Evil Twin (ignore player summon, but hide this for summoner)
+    if (HasAura(23445, 0))
+        return;
+
+    m_summon_expire = time(nullptr) + MAX_PLAYER_SUMMON_DELAY;
+    m_summon_location.WorldRelocate(*summoner);
+
+    WorldPacket data(SMSG_SUMMON_REQUEST, 8 + 4 + 4);
+    data << uint64(summoner->GetGUID());                       // summoner guid
+    data << uint32(summoner->GetZoneId());                     // summoner zone
+    data << uint32(MAX_PLAYER_SUMMON_DELAY * IN_MILLISECONDS); // auto decline after msecs
+    GetSession()->SendPacket(&data);
 }

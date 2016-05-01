@@ -3082,6 +3082,9 @@ void SpellMgr::LoadSpellCustomAttr()
         case 30834: // Infernal Relay
             spellInfo->AttributesEx2 |= SPELL_ATTR_EX2_IGNORE_LOS;
             break;
+        case 7720: // Ritual of Summoning Effect
+            spellInfo->CastingTimeIndex = 0;
+            break;
         default:
             break;
         }

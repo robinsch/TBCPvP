@@ -1130,7 +1130,7 @@ bool ChatHandler::HandleRecallCommand(const char* args)
         target->m_taxi.ClearTaxiDestinations();
     }
 
-    target->TeleportTo(target->m_recallMap, target->m_recallX, target->m_recallY, target->m_recallZ, target->m_recallO);
+    target->Recall();
     return true;
 }
 
