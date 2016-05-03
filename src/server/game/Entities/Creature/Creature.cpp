@@ -232,6 +232,13 @@ void Creature::SearchFormation()
 
 void Creature::RemoveCorpse(bool setSpawnTime)
 {
+    // since pool system can fail to roll unspawned object, this one can remain spawned, so must set respawn nevertheless
+    if (uint16 poolid = sPoolMgr->IsPartOfAPool<Creature>(GetDBTableGUIDLow()))
+        sPoolMgr->UpdatePool<Creature>(poolid, GetDBTableGUIDLow());
+
+    if (!IsInWorld())                                       // can be despawned by update pool
+        return;
+
     if ((getDeathState() != CORPSE && !m_isDeadByDefault) || (getDeathState() != ALIVE && m_isDeadByDefault))
         return;
 
@@ -1524,10 +1531,6 @@ void Creature::Respawn(bool force)
 
         //Call AI respawn virtual function
         AI()->JustRespawned();
-
-        uint16 poolid = GetDBTableGUIDLow() ? sPoolMgr->IsPartOfAPool<Creature>(GetDBTableGUIDLow()) : 0;
-        if (poolid)
-            sPoolMgr->UpdatePool<Creature>(poolid, GetDBTableGUIDLow());
     }
 
     UpdateObjectVisibility();

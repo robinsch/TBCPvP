@@ -318,12 +318,9 @@ void GameObject::Update(uint32 diff)
                                 SetLootState(GO_JUST_DEACTIVATED);
                                 return;
                             }
-                                                            // respawn timer
-                            uint16 poolid = GetDBTableGUIDLow() ? sPoolMgr->IsPartOfAPool<GameObject>(GetDBTableGUIDLow()) : 0;
-                            if (poolid)
-                                sPoolMgr->UpdatePool<GameObject>(poolid, GetDBTableGUIDLow());
-                            else
-                                GetMap()->Add(this);
+                            
+                            // respawn timer
+                            GetMap()->Add(this);
                             break;
                     }
                 }
@@ -525,19 +522,15 @@ void GameObject::Update(uint32 diff)
             if (!m_respawnDelayTime)
                 return;
 
-            if (!m_spawnedByDefault)
-            {
-                // Delete GO's that were not spawned by database fields directly from the server's grid, so GM's won't see them anymore
-                m_respawnTime = 0;
-                UpdateObjectVisibility();
-                return;
-            }
-
-            m_respawnTime = time(nullptr) + m_respawnDelayTime;
+            m_respawnTime = m_spawnedByDefault ? time(nullptr) + m_respawnDelayTime : 0;
 
             // if option not set then object will be saved at grid unload
             if (sWorld->getConfig(CONFIG_SAVE_RESPAWN_TIME_IMMEDIATELY))
                 SaveRespawnTime();
+
+            // if part of pool, let pool system schedule new spawn instead of just scheduling respawn
+            if (uint16 poolid = sPoolMgr->IsPartOfAPool<GameObject>(GetGUIDLow()))
+                sPoolMgr->UpdatePool<GameObject>(poolid, GetGUIDLow());
 
             if (IsInWorld())
                 UpdateObjectVisibility();
