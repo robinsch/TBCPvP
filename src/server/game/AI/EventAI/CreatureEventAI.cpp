@@ -625,25 +625,23 @@ void CreatureEventAI::ProcessAction(CreatureEventAI_Action const& action, uint32
             break;
         case ACTION_T_COMBAT_MOVEMENT:
             // ignore no affect case
-            if (CombatMovementEnabled == (action.combat_movement.state != 0))
+            if (CombatMovementEnabled == (action.combat_movement.state != 0) || me->IsNonMeleeSpellCasted(false))
                 return;
 
             CombatMovementEnabled = action.combat_movement.state != 0;
 
-            //Allow movement (create new targeted movement gen only if idle)
+            // Allow movement (create new targeted movement gen only if idle)
             if (CombatMovementEnabled)
             {
-                if (action.combat_movement.melee && me->isInCombat())
-                    if (Unit* victim = me->getVictim())
-                        me->SendMeleeAttackStart(victim);
+                if (action.combat_movement.melee && me->isInCombat() && me->getVictim())
+                    me->SendMeleeAttackStart(me->getVictim());
 
                 me->GetMotionMaster()->MoveChase(me->getVictim(), AttackDistance, AttackAngle);
             }
             else
             {
-                if (action.combat_movement.melee && me->isInCombat())
-                    if (Unit* victim = me->getVictim())
-                        me->SendMeleeAttackStop(victim);
+                if (action.combat_movement.melee && me->isInCombat() && me->getVictim())
+                    me->SendMeleeAttackStop(me->getVictim());
 
                 me->GetMotionMaster()->MoveIdle();
             }
