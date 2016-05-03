@@ -856,6 +856,7 @@ bool IsPositiveEffect(uint32 spellId, uint32 effIndex)
         case 43945:                                         // You're...
         case 44305:                                         // You're...
         case 30458:                                         // Nigh invulnerability
+        case 34114:                                         // Instability
             return true;
         case  1852:                                         // Silenced (GM)
         case 14621:                                         // Polymorph (Six Demon Bag)
@@ -875,7 +876,6 @@ bool IsPositiveEffect(uint32 spellId, uint32 effIndex)
         case 24134:                                         // Wyvern Sting (Rank2)
         case 24135:                                         // Wyvern Sting (Rank3)
         case 34709:                                         // Shadow Sight
-        case 34114:                                         // Instability
         case 23505:                                         // Beserking
         case 23451:                                         // Speed
             return false;
