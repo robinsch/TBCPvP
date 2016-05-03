@@ -61,6 +61,9 @@ GameObject::GameObject() : WorldObject()
     m_goInfo = NULL;
     m_ritualOwner = NULL;
     m_goData = NULL;
+    m_isInUse = false;
+    m_reStockTimer = 0;
+    m_despawnTimer = 0;
 
     m_DBTableGuid = 0;
 }
@@ -247,6 +250,28 @@ void GameObject::Update(uint32 diff)
                         m_lootState = GO_READY;                 // can be successfully open with some chance
                     }
                     return;
+                }
+                case GAMEOBJECT_TYPE_CHEST:
+                {
+                    if (m_goInfo->chest.chestRestockTime)
+                    {
+                        if (m_reStockTimer != 0)
+                        {
+                            if (m_reStockTimer <= time(nullptr))
+                            {
+                                m_reStockTimer = 0;
+                                m_lootState = GO_READY;
+                                loot.clear();
+                                ForceValuesUpdateAtIndex(GAMEOBJECT_DYN_FLAGS);
+                            }
+                        }
+                        else
+                            m_lootState = GO_READY;
+
+                        return;
+                    }
+                    else
+                        m_lootState = GO_READY;
                 }
                 default:
                     m_lootState = GO_READY;                         // for other GOis same switched without delay to GO_READY
@@ -435,26 +460,38 @@ void GameObject::Update(uint32 diff)
         }
         case GO_JUST_DEACTIVATED:
         {
-            //if Gameobject should cast spell, then this, but some GOs (type = 10) should be destroyed
-            if (GetGoType() == GAMEOBJECT_TYPE_GOOBER)
+            switch (GetGoType())
             {
-                uint32 spellId = GetGOInfo()->goober.spellId;
+                case GAMEOBJECT_TYPE_GOOBER:
+                    // if Gameobject should cast spell, then this, but some GOs (type = 10) should be destroyed
+                    if (uint32 spellId = GetGOInfo()->goober.spellId)
+                    {
+                        for (std::set<uint64>::const_iterator it = m_unique_users.begin(); it != m_unique_users.end(); ++it)
+                            if (Player* owner = ObjectAccessor::GetPlayer(*this, *it))
+                                owner->CastSpell(owner, spellId, false);
 
-                if (spellId)
-                {
-                    for (std::set<uint64>::const_iterator it = m_unique_users.begin(); it != m_unique_users.end(); ++it)
-                        if (Player* owner = ObjectAccessor::GetPlayer(*this, *it))
-                            owner->CastSpell(owner, spellId, false);
+                        m_unique_users.clear();
+                        m_usetimes = 0;
+                    }
 
-                    m_unique_users.clear();
-                    m_usetimes = 0;
-                }
+                    SetGoState(GO_STATE_READY);
 
-                SetGoState(GO_STATE_READY);
-
-                //any return here in case battleground traps
-                if (GetGOInfo()->flags & GO_FLAG_NODESPAWN)
-                    return;
+                    // any return here in case battleground traps
+                    if (GetGOInfo()->flags & GO_FLAG_NODESPAWN)
+                        return;
+                    break;
+                case GAMEOBJECT_TYPE_CHEST:
+                    m_despawnTimer = 0;
+                    if (m_goInfo->chest.chestRestockTime)
+                    {
+                        m_reStockTimer = time(nullptr) + m_goInfo->chest.chestRestockTime;
+                        m_lootState = GO_NOT_READY;
+                        ForceValuesUpdateAtIndex(GAMEOBJECT_DYN_FLAGS);
+                        return;
+                    }
+                    break;
+                default:
+                    break;
             }
 
             if (GetSpellId() || GetOwnerGUID())
@@ -496,13 +533,14 @@ void GameObject::Update(uint32 diff)
                 return;
             }
 
-            m_respawnTime = time(NULL) + m_respawnDelayTime;
+            m_respawnTime = time(nullptr) + m_respawnDelayTime;
 
             // if option not set then object will be saved at grid unload
             if (sWorld->getConfig(CONFIG_SAVE_RESPAWN_TIME_IMMEDIATELY))
                 SaveRespawnTime();
 
-            UpdateObjectVisibility();
+            if (IsInWorld())
+                UpdateObjectVisibility();
 
             break;
         }

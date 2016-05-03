@@ -689,6 +689,11 @@ class GameObject : public WorldObject, public GridObject<GameObject>
         uint32 m_DBTableGuid;                               // For new or temporary gameobjects is 0 for saved it is lowguid
         GameObjectInfo const* m_goInfo;
         GameObjectData const* m_goData;
+
+        // Used for chest type
+        bool m_isInUse;                                     // only one player at time are allowed to open chest
+        time_t m_reStockTimer;                              // timer to refill the chest
+        time_t m_despawnTimer;                              // timer to despawn the chest if something changed in it
     private:
         void RemoveFromOwner();
         void SwitchDoorOrButton(bool activate, bool alternative = false);
