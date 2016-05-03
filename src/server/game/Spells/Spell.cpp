@@ -3775,8 +3775,8 @@ uint8 Spell::CanCast(bool strict)
     }
 
     // always cancel seated state
-    if (m_caster->GetTypeId() == TYPEID_PLAYER && m_caster->ToPlayer()->IsSitState() && !(m_IsTriggeredSpell || IsAutoRepeat()) && !(m_spellInfo->Attributes & SPELL_ATTR_CASTABLE_WHILE_SITTING))
-        m_caster->ToPlayer()->SetStandState(UNIT_STAND_STATE_STAND);
+    if (m_caster->IsSitState() && !(m_IsTriggeredSpell || IsAutoRepeat()) && !(m_spellInfo->Attributes & SPELL_ATTR_CASTABLE_WHILE_SITTING))
+        m_caster->SetStandState(UNIT_STAND_STATE_STAND);
 
     Unit *target = m_targets.getUnitTarget();
     if (target)
