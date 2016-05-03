@@ -552,7 +552,7 @@ void CreatureEventAI::ProcessAction(CreatureEventAI_Action const& action, uint32
                     }
                     else
                     {
-                        //Interrupt any previous spell
+                        // Interrupt any previous spell
                         if (caster->IsNonMeleeSpellCasted(false) && action.cast.castFlags & CAST_INTURRUPT_PREVIOUS)
                             caster->InterruptNonMeleeSpells(false);
 
@@ -1205,19 +1205,17 @@ void CreatureEventAI::UpdateAI(const uint32 diff)
         {
             if (!me->hasUnitState(UNIT_STAT_LOST_CONTROL) && !me->IsNonMeleeSpellCasted(false))
             {
-                if (LastSpellMaxRange)
-                { 
-                    if (CombatMovementEnabled && me->IsInRange(me->getVictim(), 0, (LastSpellMaxRange * 0.5f)))
-                        CombatMovementEnabled = false;
-                    else if (!CombatMovementEnabled)
-                    {
-                        CombatMovementEnabled = true;
-
-                        if (me->isInCombat() && me->getVictim())
-                            me->SendMeleeAttackStart(me->getVictim());
-
+                if (LastSpellMaxRange && me->IsInRange(me->getVictim(), 0, (LastSpellMaxRange * 0.5f)))
+                {
+                    CombatMovementEnabled = false;
+                    if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() == TARGETED_MOTION_TYPE)
+                        me->StopMoving();
+                }
+                else
+                {
+                    CombatMovementEnabled = true;
+                    if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() != TARGETED_MOTION_TYPE)
                         me->GetMotionMaster()->MoveChase(me->getVictim(), AttackDistance, AttackAngle);
-                    }
                 }
             }
         }
