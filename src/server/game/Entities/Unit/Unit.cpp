@@ -359,10 +359,16 @@ void Unit::Update(uint32 p_time)
     // update combat timer
     if (isInCombat() && (GetTypeId() == TYPEID_PLAYER) || ((GetTypeId() == TYPEID_UNIT) && ToCreature()->isPet() && IsControlledByPlayer()))
     {
-        if (m_CombatTimer <= p_time)
-            ClearInCombat();
-        else
-            m_CombatTimer -= p_time;
+        // Check UNIT_STAT_MELEE_ATTACKING or UNIT_STAT_CHASE (without UNIT_STAT_FOLLOW in this case) so pets can reach far away
+        // targets without stopping half way there and running off.
+        // These flags are reset after target dies or another command is given.
+        if (m_HostileRefManager.isEmpty())
+        {
+            if (m_CombatTimer <= p_time)
+                ClearInCombat();
+            else
+                m_CombatTimer -= p_time;
+        }
     }
 
     // update visibility notify timer
