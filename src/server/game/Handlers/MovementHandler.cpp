@@ -279,6 +279,9 @@ void WorldSession::HandleMovementOpcodes(WorldPacket & recv_data)
     recv_data >> movementInfo;
     /*----------------*/
 
+    if (!mover || !mover->IsInWorld())
+        return;
+
     if (!Trinity::IsValidMapCoord(movementInfo.GetPos()->GetPositionX(), movementInfo.GetPos()->GetPositionY(), movementInfo.GetPos()->GetPositionZ(), movementInfo.GetPos()->GetOrientation()))
     {
         recv_data.rpos(recv_data.wpos());                   // prevent warnings spam
@@ -331,10 +334,6 @@ void WorldSession::HandleMovementOpcodes(WorldPacket & recv_data)
         movementInfo.ClearTransportData();
     }
 
-    // fall damage generation (ignore in flight case that can be triggered also at lags in moment teleportation to another map).
-    if (opcode == MSG_MOVE_FALL_LAND && plrMover && !plrMover->isInFlight())
-        plrMover->HandleFallDamage(movementInfo);
-
     if (plrMover && (movementInfo.HasMovementFlag(MOVEFLAG_SWIMMING) != plrMover->IsInWater()))
     {
         // now client not include swimming flag in case jumping under water
@@ -347,7 +346,7 @@ void WorldSession::HandleMovementOpcodes(WorldPacket & recv_data)
     uint32 mstime = getMSTime();
     /*----------------------*/
     if (m_clientTimeDelay == 0)
-        m_clientTimeDelay = mstime - movementInfo.time;
+        m_clientTimeDelay = mstime > movementInfo.time ? std::min(mstime - movementInfo.time, (uint32)100) : 0;
 
     /* process position-change */
     WorldPacket data(opcode, mover->GetPackGUID().size() + recv_data.size());
@@ -363,10 +362,14 @@ void WorldSession::HandleMovementOpcodes(WorldPacket & recv_data)
     
     mover->UpdatePosition(movementInfo.pos);
 
+     // fall damage generation (ignore in flight case that can be triggered also at lags in moment teleportation to another map).
+    if (opcode == MSG_MOVE_FALL_LAND && plrMover && !plrMover->isInFlight())
+        plrMover->HandleFallDamage(movementInfo);
+
     if (plrMover)                                            // nothing is charmed, or player charmed
     {
         if (mover->IsSitState() && movementInfo.GetMovementFlags() & (MOVEFLAG_MOVING | MOVEFLAG_TURNING))
-        mover->SetStandState(UNIT_STAND_STATE_STAND);
+            mover->SetStandState(UNIT_STAND_STATE_STAND);
 
         plrMover->UpdateFallInformationIfNeed(movementInfo, opcode);
 
