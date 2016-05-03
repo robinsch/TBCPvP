@@ -95,6 +95,8 @@ CreatureEventAI::CreatureEventAI(Creature *c) : CreatureAI(c)
     MeleeEnabled = true;
     AttackDistance = 0.0f;
     AttackAngle = 0.0f;
+    DynamicMovement = false;
+    LastSpellMaxRange = 0.0f;
 
     InvinceabilityHpLevel = 0;
 
@@ -545,6 +547,8 @@ void CreatureEventAI::ProcessAction(CreatureEventAI_Action const& action, uint32
                                 me->GetMotionMaster()->MoveChase(me->getVictim(), AttackDistance, AttackAngle);
                             }
                         }
+                        else if (DynamicMovement)
+                            LastSpellMaxRange = 0.0f;
                     }
                     else
                     {
@@ -553,6 +557,16 @@ void CreatureEventAI::ProcessAction(CreatureEventAI_Action const& action, uint32
                             caster->InterruptNonMeleeSpells(false);
 
                         caster->CastSpell(target, action.cast.spellId, (action.cast.castFlags & CAST_TRIGGERED));
+
+                        if (DynamicMovement)
+                        {
+                            if (tSpell && !(tSpell->rangeIndex == 2 /*SPELL_RANGE_IDX_COMBAT*/ || tSpell->rangeIndex == 1 /*SPELL_RANGE_IDX_SELF_ONLY*/) && target != me)
+                            {
+                                SpellRangeEntry const* spellRange = sSpellRangeStore.LookupEntry(tSpell->rangeIndex);
+                                if (spellRange)
+                                    LastSpellMaxRange = spellRange->maxRange;
+                            }
+                        }
                     }
                 }
                 else
@@ -844,6 +858,15 @@ void CreatureEventAI::ProcessAction(CreatureEventAI_Action const& action, uint32
             else
                 me->Unmount();
 
+            break;
+        }
+        case ACTION_T_DYNAMIC_MOVEMENT:
+        {
+            if (action.dynamicMovement.state && DynamicMovement || !action.dynamicMovement.state && !DynamicMovement)
+                break;
+
+            DynamicMovement = action.dynamicMovement.state;
+            CombatMovementEnabled = !DynamicMovement;
             break;
         }
 
@@ -1174,9 +1197,23 @@ void CreatureEventAI::UpdateAI(const uint32 diff)
         }
     }
 
-    //Melee Auto-Attack
-    if (Combat && MeleeEnabled)
-        DoMeleeAttackIfReady();
+    // Melee Auto-Attack (getVictim might be nullptr as result of timer based events and actions)
+    if (Combat && me->getVictim())
+    {
+        // Update creature dynamic movement position before doing anything else
+        if (DynamicMovement)
+        {
+            if (!me->hasUnitState(UNIT_STAT_LOST_CONTROL) && !me->IsNonMeleeSpellCasted(false))
+            {
+                if (LastSpellMaxRange && me->IsInRange(me->getVictim(), 0, (LastSpellMaxRange / 1.5f)))
+                    CombatMovementEnabled = false;
+                else
+                    CombatMovementEnabled = true;
+            }
+        }
+        else if (MeleeEnabled)
+            DoMeleeAttackIfReady();
+    }
 }
 
 inline uint32 CreatureEventAI::GetRandActionParam(uint32 rnd, uint32 param1, uint32 param2, uint32 param3)
