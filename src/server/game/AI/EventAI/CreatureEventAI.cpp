@@ -1205,10 +1205,20 @@ void CreatureEventAI::UpdateAI(const uint32 diff)
         {
             if (!me->hasUnitState(UNIT_STAT_LOST_CONTROL) && !me->IsNonMeleeSpellCasted(false))
             {
-                if (LastSpellMaxRange && me->IsInRange(me->getVictim(), 0, (LastSpellMaxRange / 1.5f)))
-                    CombatMovementEnabled = false;
-                else
-                    CombatMovementEnabled = true;
+                if (LastSpellMaxRange)
+                { 
+                    if (CombatMovementEnabled && me->IsInRange(me->getVictim(), 0, (LastSpellMaxRange * 0.5f)))
+                        CombatMovementEnabled = false;
+                    else if (!CombatMovementEnabled)
+                    {
+                        CombatMovementEnabled = true;
+
+                        if (me->isInCombat() && me->getVictim())
+                            me->SendMeleeAttackStart(me->getVictim());
+
+                        me->GetMotionMaster()->MoveChase(me->getVictim(), AttackDistance, AttackAngle);
+                    }
+                }
             }
         }
         else if (MeleeEnabled)
