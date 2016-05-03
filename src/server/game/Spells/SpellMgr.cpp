@@ -850,8 +850,6 @@ bool IsPositiveEffect(uint32 spellId, uint32 effIndex)
         case 23333:                                         // Warsong Flag
         case 23335:                                         // Silverwing Flag
         case 34976:                                         // Netherstorm Flag
-        case 23505:                                         // Beserking
-        case 23451:                                         // Speed
         case 31579:                                         // Arcane Empowerment Rank1 talent aura with one positive and one negative (check not needed in wotlk)
         case 31582:                                         // Arcane Empowerment Rank2
         case 31583:                                         // Arcane Empowerment Rank3
@@ -877,6 +875,9 @@ bool IsPositiveEffect(uint32 spellId, uint32 effIndex)
         case 24134:                                         // Wyvern Sting (Rank2)
         case 24135:                                         // Wyvern Sting (Rank3)
         case 34709:                                         // Shadow Sight
+        case 34114:                                         // Instability
+        case 23505:                                         // Beserking
+        case 23451:                                         // Speed
             return false;
     }
 
