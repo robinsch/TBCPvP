@@ -2597,7 +2597,7 @@ void Spell::handle_immediate()
         }
 
         // Interrupt movement at channeled spells for creature case
-        if (m_caster->GetTypeId() == TYPEID_UNIT && m_caster->isMoving() && !(m_spellInfo->Attributes & SPELL_ATTR_EX5_CAN_CHANNEL_WHEN_MOVING))
+        if (m_caster->GetTypeId() == TYPEID_UNIT && m_caster->isMoving() && !(m_spellInfo->AttributesEx5 & SPELL_ATTR_EX5_CAN_CHANNEL_WHEN_MOVING))
             m_caster->StopMoving();
     }
 
