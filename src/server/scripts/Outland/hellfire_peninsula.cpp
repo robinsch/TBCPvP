@@ -48,6 +48,7 @@ npc_demoniac_scryer
 npc_magic_sucker_device_spawner
 npc_living_flare
 npc_pathaleon_image
+npc_nazgrel
 EndContentData */
 
 #include "ScriptPCH.h"
@@ -1777,6 +1778,48 @@ CreatureAI* GetAI_npc_q_10129_trigger(Creature* creature)
     return new npc_q_10129_triggerAI(creature);
 }
 
+/*######
+## npc_nazgrel
+######*/
+
+#define GOSSIP_NAZGREL_ITEM1 "Tell me more of our mission here, Nazgrel."
+#define GOSSIP_NAZGREL_ITEM2 "<Keep Listening>"
+
+enum eNazgrel
+{
+    GOSSIP_TEXTID_NAZGREL1   = 9995,
+    GOSSIP_TEXTID_NAZGREL2   = 10003,
+    GOSSIP_TEXTID_NAZGREL3   = 10004
+};
+
+bool GossipHello_npc_nazgrel(Player* player, Creature* creature)
+{
+    if (creature->isQuestGiver())
+        player->PrepareQuestMenu(creature->GetGUID());
+
+    player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_NAZGREL_ITEM1, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
+    player->SEND_GOSSIP_MENU(player->GetGossipTextId(creature), creature->GetGUID());
+    return true;
+}
+
+bool GossipSelect_npc_nazgrel(Player* player, Creature* creature, uint32 /*uiSender*/, uint32 uiAction)
+{
+    switch (uiAction)
+    {
+        case GOSSIP_ACTION_INFO_DEF + 1:
+            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_NAZGREL_ITEM2, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
+            player->SEND_GOSSIP_MENU(GOSSIP_TEXTID_NAZGREL2, creature->GetGUID());
+            break;
+        case GOSSIP_ACTION_INFO_DEF + 2:
+            player->SEND_GOSSIP_MENU(GOSSIP_TEXTID_NAZGREL3, creature->GetGUID());
+            break;
+        default:
+            break;
+    }
+
+    return true;
+}
+
 void AddSC_hellfire_peninsula()
 {
     Script *newscript;
@@ -1900,5 +1943,11 @@ void AddSC_hellfire_peninsula()
     newscript = new Script;
     newscript->Name = "npc_q_10129_trigger";
     newscript->GetAI = &GetAI_npc_q_10129_trigger;
+    newscript->RegisterSelf();
+
+    newscript = new Script;
+    newscript->Name = "npc_nazgrel";
+    newscript->pGossipHello =  &GossipHello_npc_nazgrel;
+    newscript->pGossipSelect = &GossipSelect_npc_nazgrel;
     newscript->RegisterSelf();
 }
