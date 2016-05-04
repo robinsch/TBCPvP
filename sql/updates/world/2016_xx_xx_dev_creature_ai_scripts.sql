@@ -33,7 +33,7 @@ INSERT INTO `creature_ai_scripts` (`id`, `creature_id`, `event_type`, `event_inv
 (@ENTRY*100+3, @ENTRY, 16, 0, 100, 1, 6742, 30, 22000, 25000, 11, 6742, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Shattered Hand Neophyte - Cast Bloodlust on Friendlies Missing Buff'),
 (@ENTRY*100+4, @ENTRY, 2, 0, 100, 1, 50, 0, 0, 0, 11, 11640, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Shattered Hand Neophyte - Cast Renew at 50% HP'),
 (@ENTRY*100+5, @ENTRY, 2, 0, 100, 0, 15, 0, 0, 0, 25, 0, 0, 0, 1, -47, 0, 0, 0, 0, 0, 0, 'Shattered Hand Neophyte - Flee at 15% HP'),
-(@ENTRY*100+6, @ENTRY, 6, 0, 100, 0, 0, 0, 0, 0, 11, 38879, 6, 7, 0, 0, 0, 0, 0, 0, 0, 0, 'Shattered Hand Neophyte - Cast Soul Burden on Death'); -- Needs core support
+(@ENTRY*100+6, @ENTRY, 6, 0, 100, 0, 0, 0, 0, 0, 11, 38879, 6, 7, 0, 0, 0, 0, 0, 0, 0, 0, 'Shattered Hand Neophyte - Cast Soul Burden on Death');
 
 -- Shattered Hand Grunt
 SET @ENTRY := 16867;
@@ -43,4 +43,4 @@ INSERT INTO `creature_ai_scripts` (`id`, `creature_id`, `event_type`, `event_inv
 (@ENTRY*100+1, @ENTRY, 9, 0, 100, 1, 0, 5, 8000, 9000, 11, 11976, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Shattered Hand Grunt - Cast Strike'),
 (@ENTRY*100+2, @ENTRY, 0, 0, 100, 1, 6000, 8000, 12000, 14000, 11, 11978, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Shattered Hand Grunt - Cast Kick'),
 (@ENTRY*100+3, @ENTRY, 2, 0, 100, 0, 15, 0, 0, 0, 25, 0, 0, 0, 1, -47, 0, 0, 0, 0, 0, 0, 'Shattered Hand Grunt - Flee at 15% HP'),
-(@ENTRY*100+4, @ENTRY, 6, 0, 100, 0, 0, 0, 0, 0, 11, 38879, 6, 7, 0, 0, 0, 0, 0, 0, 0, 0, 'Shattered Hand Grunt - Cast Soul Burden on Death'); -- Needs core support
+(@ENTRY*100+4, @ENTRY, 6, 0, 100, 0, 0, 0, 0, 0, 11, 38879, 6, 7, 0, 0, 0, 0, 0, 0, 0, 0, 'Shattered Hand Grunt - Cast Soul Burden on Death');

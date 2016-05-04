@@ -1179,6 +1179,16 @@ void Spell::EffectDummy(uint32 i)
                     m_caster->CastCustomSpell(unitTarget, 37675, &basepoints0, NULL, NULL, true);
                     return;
                 }
+                case 38879:                                 // Soul Burden
+                {
+                    if (m_caster->GetTypeId() != TYPEID_PLAYER)
+                        return;
+
+                    if (m_caster->ToPlayer()->GetQuestStatus(10864) == QUEST_STATUS_INCOMPLETE)
+                        m_caster->ToPlayer()->KilledMonsterCredit(22334, 0);
+                    
+                    return;
+                }
                 // Skyguard Blasting Charge (Quest: Fires Over Skettis - 11008)
                 case 39844:
                 {
