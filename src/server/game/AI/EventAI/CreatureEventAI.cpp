@@ -1264,6 +1264,8 @@ inline Unit* CreatureEventAI::GetTargetByType(uint32 Target, Unit* pActionInvoke
             return SelectTarget(SELECT_TARGET_RANDOM, 1);
         case TARGET_T_ACTION_INVOKER:
             return pActionInvoker;
+        case TARGET_T_ACTION_INVOKER_OWNER:
+            return pActionInvoker ? pActionInvoker->GetCharmerOrOwnerOrSelf() : nullptr;
         default:
             return NULL;
     };
