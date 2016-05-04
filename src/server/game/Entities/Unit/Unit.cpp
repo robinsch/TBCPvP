@@ -7712,22 +7712,21 @@ Unit* Unit::GetFirstControlled() const
 
 void Unit::RemoveAllControlled()
 {
+    // possessed pet
+    if (GetTypeId() == TYPEID_PLAYER)
+        ToPlayer()->StopCastingCharm();
+
     while (!m_Controlled.empty())
     {
         Unit *target = *m_Controlled.begin();
         m_Controlled.erase(m_Controlled.begin());
         if (target->GetCharmerGUID() == GetGUID())
             target->RemoveCharmAuras();
-        else if (target->GetOwnerGUID() == GetGUID()
-            && target->GetTypeId() == TYPEID_UNIT
-            && ((Creature*)target)->HasSummonMask(SUMMON_MASK_SUMMON))
-        {
+        // robinsch: ///@todo: Should creature unsummon their current tempsummons? https://github.com/robinsch/TBCPvP/issues/45
+        else if (GetTypeId() == TYPEID_PLAYER && target->GetOwnerGUID() == GetGUID() && target->GetTypeId() == TYPEID_UNIT && ((Creature*)target)->HasSummonMask(SUMMON_MASK_SUMMON))
             ((TempSummon*)target)->UnSummon();
-        }
         else
-        {
             sLog->outError("Unit %u is trying to release unit %u which is neither charmed nor owned by it", GetEntry(), target->GetEntry());
-        }
     }
     if (GetPetGUID() != GetUInt64Value(UNIT_FIELD_SUMMON))
         sLog->outCrash("Unit %u is not able to release its summon %u", GetEntry(), GetPetGUID());
