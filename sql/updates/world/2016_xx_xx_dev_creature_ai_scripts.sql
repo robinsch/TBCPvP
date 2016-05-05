@@ -73,3 +73,24 @@ INSERT INTO `creature_ai_scripts` (`id`, `creature_id`, `event_type`, `event_inv
 (@ENTRY*100+2, @ENTRY, 9, 0, 100, 1, 0, 10, 13600, 14500, 11, 12674, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Bloodmage - Cast Frost Nova on Close'),
 (@ENTRY*100+3, @ENTRY, 0, 0, 100, 1, 8000, 9000, 19000, 24000, 11, 33634, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Bloodmage - Cast Blizzard'),
 (@ENTRY*100+4, @ENTRY, 0, 0, 100, 1, 10000, 12000, 15000, 22000, 11, 22273, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Bloodmage - Cast Cast Arcane Missiles');
+
+-- Fel Handler
+SET @ENTRY := 19190;
+UPDATE `creature_template` SET `AIName`='EventAI' WHERE `entry`=@ENTRY;
+DELETE FROM `creature_ai_scripts` WHERE `creature_id`=@ENTRY;
+INSERT INTO `creature_ai_scripts` (`id`, `creature_id`, `event_type`, `event_inverse_phase_mask`, `event_chance`, `event_flags`, `event_param1`, `event_param2`, `event_param3`, `event_param4`, `action1_type`, `action1_param1`, `action1_param2`, `action1_param3`, `action2_type`, `action2_param1`, `action2_param2`, `action2_param3`, `action3_type`, `action3_param1`, `action3_param2`, `action3_param3`, `comment`) VALUES 
+(@ENTRY*100+1, @ENTRY, 9, 0, 100, 1, 5, 0, 12000, 13000, 11, 32723, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Fel Handler - Cast Mortal Strike on Close');
+
+-- Netherhound
+SET @ENTRY := 16950;
+UPDATE `creature_template` SET `AIName`='EventAI' WHERE `entry`=@ENTRY;
+DELETE FROM `creature_ai_scripts` WHERE `creature_id`=@ENTRY;
+INSERT INTO `creature_ai_scripts` (`id`, `creature_id`, `event_type`, `event_inverse_phase_mask`, `event_chance`, `event_flags`, `event_param1`, `event_param2`, `event_param3`, `event_param4`, `action1_type`, `action1_param1`, `action1_param2`, `action1_param3`, `action2_type`, `action2_param1`, `action2_param2`, `action2_param3`, `action3_type`, `action3_param1`, `action3_param2`, `action3_param3`, `comment`) VALUES 
+(@ENTRY*100+1, @ENTRY, 0, 0, 100, 1, 4000, 4500, 12000, 18000, 11, 11981, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Netherhound - Cast Mana Burn');
+
+-- Doomwhisperer
+SET @ENTRY := 18981;
+UPDATE `creature_template` SET `AIName`='EventAI' WHERE `entry`=@ENTRY;
+DELETE FROM `creature_ai_scripts` WHERE `creature_id`=@ENTRY;
+INSERT INTO `creature_ai_scripts` (`id`, `creature_id`, `event_type`, `event_inverse_phase_mask`, `event_chance`, `event_flags`, `event_param1`, `event_param2`, `event_param3`, `event_param4`, `action1_type`, `action1_param1`, `action1_param2`, `action1_param3`, `action2_type`, `action2_param1`, `action2_param2`, `action2_param3`, `action3_type`, `action3_param1`, `action3_param2`, `action3_param3`, `comment`) VALUES 
+(@ENTRY*100+1, @ENTRY, 0, 0, 100, 1, 3500, 4500, 12000, 18000, 11, 33969, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'Doomwhisperer - Cast Draining Bolt');
