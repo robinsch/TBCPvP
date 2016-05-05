@@ -515,7 +515,7 @@ void CreatureEventAI::ProcessAction(CreatureEventAI_Action const& action, uint32
             if (action.cast.castFlags & CAST_FORCE_TARGET_SELF)
                 caster = target;
 
-            //Allowed to cast only if not casting (unless we interrupt ourself) or if spell is triggered
+            // Allowed to cast only if not casting (unless we interrupt ourself) or if spell is triggered
             bool canCast = !caster->IsNonMeleeSpellCasted(false) || (action.cast.castFlags & (CAST_TRIGGERED | CAST_INTURRUPT_PREVIOUS));
 
             // If cast flag CAST_AURA_NOT_PRESENT is active, check if target already has aura on them
@@ -532,6 +532,23 @@ void CreatureEventAI::ProcessAction(CreatureEventAI_Action const& action, uint32
                 //Verify that spell exists
                 if (tSpell)
                 {
+                    if (action.cast.castFlags & CAST_COMBAT_MOVE)
+                    {
+                        // If cast flag SMARTCAST_COMBAT_MOVE is set combat movement will not be allowed
+                        // unless target is outside spell range, out of mana, or LOS.
+
+                        bool allowMove = false;
+                        int32 mana = me->GetPower(POWER_MANA);
+
+                        if (me->GetDistance(target) > GetSpellMaxRange(tSpell) ||
+                            me->GetDistance(target) < GetSpellMinRange(tSpell) ||
+                            !me->IsWithinLOSInMap(target) ||
+                            mana < CalculatePowerCost(tSpell, me, SpellSchoolMask(tSpell->SchoolMask)))
+                            allowMove = true;
+
+                        SetCombatMove(allowMove);
+                    }
+
                     //Check if cannot cast spell
                     if (!(action.cast.castFlags & (CAST_FORCE_TARGET_SELF | CAST_FORCE_CAST)) &&
                         !CanCast(target, tSpell, (action.cast.castFlags & CAST_TRIGGERED)))
@@ -638,27 +655,7 @@ void CreatureEventAI::ProcessAction(CreatureEventAI_Action const& action, uint32
             MeleeEnabled = action.auto_attack.state != 0;
             break;
         case ACTION_T_COMBAT_MOVEMENT:
-            // ignore no affect case
-            if (CombatMovementEnabled == (action.combat_movement.state != 0) || me->IsNonMeleeSpellCasted(false))
-                return;
-
-            CombatMovementEnabled = action.combat_movement.state != 0;
-
-            // Allow movement (create new targeted movement gen only if idle)
-            if (CombatMovementEnabled)
-            {
-                if (action.combat_movement.melee && me->isInCombat() && me->getVictim())
-                    me->SendMeleeAttackStart(me->getVictim());
-
-                me->GetMotionMaster()->MoveChase(me->getVictim(), AttackDistance, AttackAngle);
-            }
-            else
-            {
-                if (action.combat_movement.melee && me->isInCombat() && me->getVictim())
-                    me->SendMeleeAttackStop(me->getVictim());
-
-                me->GetMotionMaster()->MoveIdle();
-            }
+            SetCombatMove(action.combat_movement.state != 0);
             break;
         case ACTION_T_SET_PHASE:
             Phase = action.set_phase.phase;
@@ -1479,5 +1476,35 @@ bool CreatureEventAI::SpawnedEventConditionsCheck(CreatureEventAI_Event const& e
     }
 
     return false;
+}
+
+void CreatureEventAI::SetCombatMove(bool on)
+{
+    if (CombatMovementEnabled == on)
+        return;
+
+    CombatMovementEnabled = on;
+
+    if (!IsEscorted())
+    {
+        if (on && me->getVictim())
+        {
+            if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() == IDLE_MOTION_TYPE)
+            {
+                me->GetMotionMaster()->MoveChase(me->getVictim());
+                me->CastStop();
+            }
+        }
+        else
+        {
+            if (me->hasUnitState(UNIT_STAT_CONFUSED | UNIT_STAT_FLEEING))
+                return;
+
+            me->GetMotionMaster()->MovementExpired();
+            me->GetMotionMaster()->Clear(true);
+            me->StopMoving();
+            me->GetMotionMaster()->MoveIdle();
+        }
+    }
 }
 

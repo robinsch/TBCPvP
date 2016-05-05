@@ -162,12 +162,13 @@ enum Target
 
 enum CastFlags
 {
-    CAST_INTURRUPT_PREVIOUS     = 0x01,                     //Interrupt any spell casting
-    CAST_TRIGGERED              = 0x02,                     //Triggered (this makes spell cost zero mana and have no cast time)
-    CAST_FORCE_CAST             = 0x04,                     //Forces cast even if creature is out of mana or out of range
-    CAST_NO_MELEE_IF_OOM        = 0x08,                     //Prevents creature from entering melee if out of mana or out of range
-    CAST_FORCE_TARGET_SELF      = 0x10,                     //Forces the target to cast this spell on itself
-    CAST_AURA_NOT_PRESENT       = 0x20,                     //Only casts the spell if the target does not have an aura from the spell
+    CAST_INTURRUPT_PREVIOUS     = 0x01,                     // Interrupt any spell casting
+    CAST_TRIGGERED              = 0x02,                     // Triggered (this makes spell cost zero mana and have no cast time)
+    CAST_FORCE_CAST             = 0x04,                     // Forces cast even if creature is out of mana or out of range
+    CAST_NO_MELEE_IF_OOM        = 0x08,                     // Prevents creature from entering melee if out of mana or out of range
+    CAST_FORCE_TARGET_SELF      = 0x10,                     // Forces the target to cast this spell on itself
+    CAST_AURA_NOT_PRESENT       = 0x20,                     // Only casts the spell if the target does not have an aura from the spell
+    CAST_COMBAT_MOVE            = 0x40                      // Prevents combat movement if cast successful. Allows movement on range, OOM, LOS
 };
 
 enum EventFlags
@@ -308,7 +309,6 @@ struct CreatureEventAI_Action
         struct
         {
             uint32 state;                                   // 0 = stop combat based movement, anything else continue attacking
-            uint32 melee;                                   // if set: at stop send melee combat stop if in combat, use for terminate melee fighting state for switch to ranged
         } combat_movement;
         // ACTION_T_SET_PHASE                               = 22
         struct
@@ -625,6 +625,8 @@ class CreatureEventAI : public CreatureAI
         void UpdateAI(const uint32 diff);
         void ReceiveEmote(Player* player, uint32 text_emote);
         static int Permissible(const Creature *);
+
+        void SetCombatMove(bool on);
 
         bool ProcessEvent(CreatureEventAIHolder& pHolder, Unit* pActionInvoker = NULL);
         void ProcessAction(CreatureEventAI_Action const& action, uint32 rnd, uint32 EventId, Unit* pActionInvoker);
