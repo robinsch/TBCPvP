@@ -417,21 +417,21 @@ CreatureAI* GetAI_npc_fel_guard_hound(Creature* creature)
 ## npc_wing_commander_dabiree
 ######*/
 
-#define GOSSIP_ITEM1_DAB "Fly me to Murketh and Shaadraz Gateways"
-#define GOSSIP_ITEM2_DAB "Fly me to Shatter Point"
+#define GOSSIP_ITEM1_DAB "I'm on a bombing mission for Forward Commander Kingston. I need a gryphon destroyer!"
+#define GOSSIP_ITEM2_DAB "Send me to Shatter Point!"
 
 bool GossipHello_npc_wing_commander_dabiree(Player* player, Creature* creature)
 {
     if (creature->isQuestGiver())
         player->PrepareQuestMenu(creature->GetGUID());
 
-    //Mission: The Murketh and Shaadraz Gateways
+    // Mission: The Murketh and Shaadraz Gateways
     if (player->GetQuestStatus(10146) == QUEST_STATUS_INCOMPLETE)
-        player->ADD_GOSSIP_ITEM(2, GOSSIP_ITEM1_DAB, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
+        player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_ITEM1_DAB, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
 
-    //Shatter Point
-    if (!player->GetQuestRewardStatus(10340))
-        player->ADD_GOSSIP_ITEM(2, GOSSIP_ITEM2_DAB, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
+    // Shatter Point
+    if (player->GetQuestStatus(10340) == QUEST_STATUS_COMPLETE)
+        player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_ITEM2_DAB, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
 
     player->SEND_GOSSIP_MENU(player->GetGossipTextId(creature), creature->GetGUID());
 
@@ -443,13 +443,14 @@ bool GossipSelect_npc_wing_commander_dabiree(Player* player, Creature* creature,
     if (action == GOSSIP_ACTION_INFO_DEF + 1)
     {
         player->CLOSE_GOSSIP_MENU();
-        player->CastSpell(player, 33768, true);               //TaxiPath 585 (Gateways Murket and Shaadraz)
+        player->CastSpell(player, 33768, true);               // TaxiPath 585 (Gateways Murket and Shaadraz)
     }
     if (action == GOSSIP_ACTION_INFO_DEF + 2)
     {
         player->CLOSE_GOSSIP_MENU();
-        player->CastSpell(player, 35069, true);               //TaxiPath 612 (Taxi - Hellfire Peninsula - Expedition Point to Shatter Point)
+        player->CastSpell(player, 35069, true);               // TaxiPath 612 (Taxi - Hellfire Peninsula - Expedition Point to Shatter Point)
     }
+
     return true;
 }
 
@@ -462,11 +463,11 @@ enum
     SPELL_TAXI_TO_SHATTERP      = 35066
 };
 
-#define GOSSIP_ITEM1_LEAF       "Fly me to Shatter Point"
+#define GOSSIP_ITEM1_LEAF       "Send me to Shatter Point."
 
 bool GossipHello_npc_gryphoneer_leafbeard(Player* player, Creature* creature)
 {
-    //Go back to Shatter Point if player has completed the quest 10340 - Shatter Point
+    // Go back to Shatter Point if player has completed the quest 10340 - Shatter Point
     if (player->GetQuestStatus(10340) == QUEST_STATUS_COMPLETE)
         player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_ITEM1_LEAF, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF+1);
 
