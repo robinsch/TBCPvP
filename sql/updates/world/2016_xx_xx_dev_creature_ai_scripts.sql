@@ -23,6 +23,14 @@ DELETE FROM `creature_ai_scripts` WHERE `creature_id`=@ENTRY;
 INSERT INTO `creature_ai_scripts` (`id`, `creature_id`, `event_type`, `event_inverse_phase_mask`, `event_chance`, `event_flags`, `event_param1`, `event_param2`, `event_param3`, `event_param4`, `action1_type`, `action1_param1`, `action1_param2`, `action1_param3`, `action2_type`, `action2_param1`, `action2_param2`, `action2_param3`, `action3_type`, `action3_param1`, `action3_param2`, `action3_param3`, `comment`) VALUES 
 (@ENTRY*100+1, @ENTRY, 4, 0, 100, 1, 0, 0, 0, 0, 11, 32723, 0, 1, 43, 0, 0, 0, 0, 0, 0, 0, 'Bonechewer Raider - Cast Summon Bonechewer Riding Wolf and Dismount on Aggro');
 
+-- Bonechewer Evoker
+SET @ENTRY := 19701;
+UPDATE `creature_template` SET `AIName`='EventAI' WHERE `entry`=@ENTRY;
+DELETE FROM `creature_ai_scripts` WHERE `creature_id`=@ENTRY;
+INSERT INTO `creature_ai_scripts` (`id`, `creature_id`, `event_type`, `event_inverse_phase_mask`, `event_chance`, `event_flags`, `event_param1`, `event_param2`, `event_param3`, `event_param4`, `action1_type`, `action1_param1`, `action1_param2`, `action1_param3`, `action2_type`, `action2_param1`, `action2_param2`, `action2_param3`, `action3_type`, `action3_param1`, `action3_param2`, `action3_param3`, `comment`) VALUES 
+(@ENTRY*100+1, @ENTRY, 0, 0, 100, 1, 0, 0, 3400, 4700, 11, 9053, 1, 64, 0, 0, 0, 0, 0, 0, 0, 0, 'Bonechewer Evoker - Cast Fireball'),
+(@ENTRY*100+2, @ENTRY, 2, 0, 100, 0, 15, 0, 0, 0, 25, 0, 0, 0, 1, -47, 0, 0, 0, 0, 0, 0, 'Bonechewer Evoker - Flee at 15% HP');
+
 -- Shattered Hand Neophyte
 SET @ENTRY := 19410;
 UPDATE `creature_template` SET `AIName`='EventAI' WHERE `entry`=@ENTRY;
