@@ -1715,6 +1715,13 @@ void Player::Update(uint32 p_time)
             m_weaponChangeTimer -= p_time;
     }
 
+    if (!IsPositionValid())
+    {
+        sLog->outError("Player (guidlow %d) has invalid coordinates (MapId: %u X: %f Y: %f Z: %f O: %f). Kicking player.", GetGUIDLow(), GetMapId(), GetPositionX(), GetPositionY(), GetPositionZ(), GetOrientation());
+        GetSession()->KickPlayer();
+        return;
+    }
+
     if (m_zoneUpdateTimer > 0)
     {
         if (p_time >= m_zoneUpdateTimer)

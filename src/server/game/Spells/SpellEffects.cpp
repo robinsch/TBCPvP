@@ -4250,14 +4250,6 @@ void Spell::EffectSummonCritter(uint32 i)
 
     critter->Relocate(px, py, pz, m_caster->GetOrientation());
 
-    if (!critter->IsPositionValid())
-    {
-        sLog->outError("Pet (guidlow %d, entry %d) not summoned. Suggested coordinates isn't valid (X: %f Y: %f)",
-            critter->GetGUIDLow(), critter->GetEntry(), critter->GetPositionX(), critter->GetPositionY());
-        delete critter;
-        return;
-    }
-
     critter->SetOwnerGUID(m_caster->GetGUID());
     critter->SetCreatorGUID(m_caster->GetGUID());
     critter->setFaction(m_caster->getFaction());
