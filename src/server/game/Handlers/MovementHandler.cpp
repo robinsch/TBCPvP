@@ -282,7 +282,7 @@ void WorldSession::HandleMovementOpcodes(WorldPacket & recv_data)
     if (!mover || !mover->IsInWorld())
         return;
 
-    if (!Trinity::IsValidMapCoord(movementInfo.GetPos()->GetPositionX(), movementInfo.GetPos()->GetPositionY(), movementInfo.GetPos()->GetPositionZ(), movementInfo.GetPos()->GetOrientation()))
+    if (!movementInfo.pos.IsPositionValid())
     {
         recv_data.rpos(recv_data.wpos());                   // prevent warnings spam
         return;
