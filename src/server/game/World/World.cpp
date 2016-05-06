@@ -1071,9 +1071,6 @@ void World::LoadConfigSettings(bool reload)
     sLog->outString("WORLD: VMap support included. LineOfSight:%i, getHeight:%i, indoorCheck:%i, PetLOS:%i", enableLOS, enableHeight, enableIndoor, enablePetLOS);
     sLog->outString("WORLD: VMap data directory is: %svmaps", m_dataPath.c_str());
 
-    m_configs[CONFIG_VMAP_INDOOR_CHECK] = enableIndoor;
-    m_configs[CONFIG_PET_LOS] = enablePetLOS;
-    m_configs[CONFIG_VMAP_TOTEM] = ConfigMgr::GetBoolDefault("vmap.totem", false);
     m_configs[CONFIG_MAX_WHO] = ConfigMgr::GetIntDefault("MaxWhoListReturns", 49);
 
     m_configs[CONFIG_BG_START_MUSIC] = ConfigMgr::GetBoolDefault("MusicInBattleground", false);

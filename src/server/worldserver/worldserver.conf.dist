@@ -166,30 +166,14 @@ EAIErrorLevel = 2
 #        These spells are ignored for LoS calculation
 #         List of ids with delimiter ','
 #
-#    vmap.petLOS
-#        Check LOS for pets, to avoid them going through walls etc.
-#                 0 (disable, somewhat less CPU usage)
-#        Default: 1 (enable, each pet attack command will check for LOS)
-#
-#    vmap.totem
-#        Use VMAP for totem summon place calculation
-#        Default: 0 (disable, less CPU usage)
-#                 1 (enable, each totem created check LOS)
-#
-#    vmap.enableIndoorCheck
-#        Enable/Disable VMap based indoor check to remove outdoor-only auras (mounts etc.)
-#                 0 (disabled, somewhat less CPU usage)
-#        Default: 1 (enabled)
-#
 #    mmap.enable
 #        Enable/Disable pathfinding using mmaps
 #        Default: 1 (enable)
 #                 0 (disable)
 #
-#
-#	 mmap.implementMapIds
-#		Enable mmap pathfinding on the listed maps
-#		List of map ids with delimiter ','
+#    mmap.implementMapIds
+#       Enable mmap pathfinding on the listed maps
+#       List of map ids with delimiter ','
 # 
 #
 #    DetectPosCollision
@@ -258,9 +242,6 @@ DisconnectToleranceInterval = 0
 vmap.enableLOS = 1
 vmap.enableHeight = 1
 vmap.ignoreSpellIds = "7720"
-vmap.petLOS = 1
-vmap.totem = 1
-vmap.enableIndoorCheck = 1
 mmap.enable = 1
 mmap.implementMapIds = ""
 DetectPosCollision = 1

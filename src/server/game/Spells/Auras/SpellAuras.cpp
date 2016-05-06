@@ -5227,7 +5227,7 @@ void Aura::HandleShapeshiftBoosts(bool apply)
                 if (spellInfo->Stances & (1<<form))
                 {
                     // Add this check here, for all form spells!
-                    if (m_target->GetTypeId() == TYPEID_PLAYER && !m_target->ToPlayer()->isGameMaster() && sWorld->getConfig(CONFIG_VMAP_INDOOR_CHECK) && VMAP::VMapFactory::createOrGetVMapManager()->isLineOfSightCalcEnabled())
+                    if (m_target->GetTypeId() == TYPEID_PLAYER && !m_target->ToPlayer()->isGameMaster())
                     {
                         if (spellInfo->Attributes & 0x8000)
                             if(!m_target->GetMap()->IsOutdoors(m_target->GetPositionX(), m_target->GetPositionY(), m_target->GetPositionZ()))
