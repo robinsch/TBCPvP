@@ -84,15 +84,6 @@ enum ArenaTeamTypes
     ARENA_TEAM_5v5      = 5
 };
 
-enum QualifiedNotifications
-{
-    MSG_TEAM_UNREGISTRED    = 1,
-    MSG_TEAM_BELOW_RATING   = 2,
-    MSG_PLAYER_BELOW_RATING = 3,
-    MSG_NOT_ENOUGH_MEMBERS  = 4,
-    MSG_TEAM_DISBANDED      = 5
-};
-
 #define ARENA_NEW_TEAM_RATING       1500
 #define ARENA_NEW_PERSONAL_RATING   1500
 
