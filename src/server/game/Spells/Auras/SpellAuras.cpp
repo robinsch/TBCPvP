@@ -5848,9 +5848,6 @@ void Aura::PeriodicTick()
 
             pCaster->CalcAbsorbResist(target, GetSpellSchoolMask(spellProto), DOT, pdamage, &absorb, &resist);
 
-            if (target->GetHealth() < pdamage)
-                pdamage = uint32(target->GetHealth());
-
             sLog->outDetail("PeriodicTick: %u (TypeId: %u) health leech of %u (TypeId: %u) for %u dmg inflicted by %u abs is %u",
                 GUID_LOPART(GetCasterGUID()), GuidHigh2TypeId(GUID_HIPART(GetCasterGUID())), target->GetGUIDLow(), target->GetTypeId(), pdamage, GetId(), absorb);
 
@@ -5880,13 +5877,6 @@ void Aura::PeriodicTick()
                 modOwner->ApplySpellMod(spellProto->Id, SPELLMOD_MULTIPLE_VALUE, multiplier);
 
             uint32 heal = pCaster->SpellHealingBonusTaken(pCaster, spellProto, int32(new_damage * multiplier), DOT);
-            // Apply healingPct values
-            float minval = pCaster->GetMaxNegativeAuraModifier(SPELL_AURA_MOD_HEALING_PCT);
-            if (minval)
-                heal *= (100.0f + minval) / 100.0f;
-            float maxval = pCaster->GetMaxPositiveAuraModifier(SPELL_AURA_MOD_HEALING_PCT);
-            if (maxval)
-                heal *= (100.0f + maxval) / 100.0f;
 
             int32 gain = pCaster->ModifyHealth(heal);
             pCaster->getHostileRefManager().threatAssist(pCaster, gain * 0.5f, spellProto);
