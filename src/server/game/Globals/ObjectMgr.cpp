@@ -2704,7 +2704,7 @@ void ObjectMgr::LoadArenaTeams()
     //                                                     0                      1    2           3    4               5
     QueryResult_AutoPtr result = CharacterDatabase.Query( "SELECT arena_team.arenateamid, name, captainguid, type, BackgroundColor, EmblemStyle, "
     //   6           7           8            9      10    11   12     13    14
-        "EmblemColor, BorderStyle, BorderColor, qualified, rating, games, wins, played, wins2, rank "
+        "EmblemColor, BorderStyle, BorderColor, rating, games, wins, played, wins2, rank "
         "FROM arena_team LEFT JOIN arena_team_stats ON arena_team.arenateamid = arena_team_stats.arenateamid ORDER BY arena_team.arenateamid ASC" );
 
     if (!result)
