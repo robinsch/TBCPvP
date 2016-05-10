@@ -1281,18 +1281,32 @@ void Player::StopMirrorTimer(MirrorTimerType Type)
 
 void Player::EnvironmentalDamage(EnviromentalDamage type, uint32 damage)
 {
-    if (!isAlive() || isGameMaster())
+    if (!isTargetableForAttack())
+        return;
+
+    SpellSchoolMask schoolMask;
+    switch (type)
+    {
+        case DAMAGE_LAVA:
+            schoolMask = SPELL_SCHOOL_MASK_FIRE;
+            break;
+        case DAMAGE_SLIME: 
+            schoolMask = SPELL_SCHOOL_MASK_NATURE;
+            break;
+        default:
+            schoolMask = SPELL_SCHOOL_MASK_NORMAL;
+            break;
+    }
+
+    if (IsImmunedToDamage(schoolMask, true))
         return;
 
     // Absorb, resist some environmental damage type
     uint32 absorb = 0;
     uint32 resist = 0;
-    if (type == DAMAGE_LAVA)
-        CalcAbsorbResist(this, SPELL_SCHOOL_MASK_FIRE, DIRECT_DAMAGE, damage, &absorb, &resist);
-    else if (type == DAMAGE_SLIME)
-        CalcAbsorbResist(this, SPELL_SCHOOL_MASK_NATURE, DIRECT_DAMAGE, damage, &absorb, &resist);
+    CalcAbsorbResist(this, schoolMask, DIRECT_DAMAGE, damage, &absorb, &resist);
 
-    damage-=absorb+resist;
+    damage -= absorb + resist;
 
     WorldPacket data(SMSG_ENVIRONMENTALDAMAGELOG, (21));
     data << uint64(GetGUID());
@@ -1302,11 +1316,11 @@ void Player::EnvironmentalDamage(EnviromentalDamage type, uint32 damage)
     data << uint32(resist);
     SendMessageToSet(&data, true);
 
-    DealDamage(this, damage, NULL, SELF_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, NULL, false);
+    DealDamage(this, damage, nullptr, SELF_DAMAGE, schoolMask, nullptr, false);
 
     if (type == DAMAGE_FALL && !isAlive())                     // DealDamage not apply item durability loss at self damage
     {
-        sLog->outDebug("We are fall to death, loosing 10 percents durability");
+        //sLog->outDebug("We are fall to death, loosing 10 percents durability");
         DurabilityLossAll(0.10f, false);
         // durability lost message
         WorldPacket data(SMSG_DURABILITY_DAMAGE_DEATH, 0);
