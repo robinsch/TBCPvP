@@ -8384,9 +8384,15 @@ uint32 Unit::SpellHealingBonusTaken(Unit* pCaster, SpellEntry const* spellProto,
         {
             if ((*i)->GetSpellProto()->SpellVisual == 9180)
             {
-                if (((spellProto->SpellFamilyFlags & 0x0000000040000000LL) && (*i)->GetEffIndex() == 1) ||  // Flash of Light
-                        ((spellProto->SpellFamilyFlags & 0x0000000080000000LL) && (*i)->GetEffIndex() == 0))    // Holy Light
-                    TakenTotal += (*i)->GetModifier()->m_amount;
+                uint32 bonusFlat = 0;
+                // Increased Blessing of Light Healing
+                if (Aura* aura = pCaster->GetAura(38320, EFFECT_INDEX_0))
+                    bonusFlat += aura->GetModifier()->m_amount;
+
+                if ((spellProto->SpellFamilyFlags & 0x0000000040000000LL) && (*i)->GetEffIndex() == EFFECT_INDEX_1)      // Flash of Light
+                    TakenTotal += (*i)->GetModifier()->m_amount + (bonusFlat * 0.5f);
+                else if ((spellProto->SpellFamilyFlags & 0x0000000080000000LL) && (*i)->GetEffIndex() == EFFECT_INDEX_0) // Holy Light
+                    TakenTotal += (*i)->GetModifier()->m_amount + bonusFlat;
             }
         }
     }
