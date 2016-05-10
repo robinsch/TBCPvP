@@ -173,6 +173,8 @@ void WorldSession::HandleWhoOpcode(WorldPacket & recv_data)
     sLog->outDebug("WORLD: Recvd CMSG_WHO Message");
     //recv_data.hexlike();
 
+    uint32 matchcount = 0;
+
     uint32 level_min, level_max, racemask, classmask, zones_count, str_count;
     uint32 zoneids[10];                                     // 10 is client limit
     std::string player_name, guild_name;
@@ -235,7 +237,6 @@ void WorldSession::HandleWhoOpcode(WorldPacket & recv_data)
     uint32 security = GetSecurity();
     bool allowTwoSideWhoList       = sWorld->getConfig(CONFIG_ALLOW_TWO_SIDE_WHO_LIST);
     bool gmInWhoList               = sWorld->getConfig(CONFIG_GM_IN_WHO_LIST);
-    bool fakeArenaMembersInWhoList = sWorld->getConfig(CONFIG_ENABLE_FAKE_WHO_ON_ARENA);
 
     uint32 displaycount = 0;
 
@@ -243,57 +244,37 @@ void WorldSession::HandleWhoOpcode(WorldPacket & recv_data)
     data << uint32(displaycount);                           // placeholder, count of players matching criteria
     data << uint32(displaycount);                           // placeholder, count of players displayed
 
-    ACE_GUARD(ACE_Thread_Mutex, g, *HashMapHolder<Player>::GetLock());
-    HashMapHolder<Player>::MapType& m = sObjectAccessor->GetPlayers();
-    for (HashMapHolder<Player>::MapType::const_iterator itr = m.begin(); itr != m.end(); ++itr)
+    std::vector<WhoListPlayerInfo> * m = sWorld->GetWhoListInfo();
+    for (std::vector<WhoListPlayerInfo>::const_iterator itr = m->begin(); itr != m->end(); ++itr)
     {
         if (security == SEC_PLAYER)
         {
             // player can see member of other team only if CONFIG_ALLOW_TWO_SIDE_WHO_LIST
-            if (itr->second->GetTeam() != team && !allowTwoSideWhoList)
+            if ((*itr).teamId && !allowTwoSideWhoList)
                 continue;
 
             // player can see MODERATOR, GAME MASTER, ADMINISTRATOR only if CONFIG_GM_IN_WHO_LIST
-            if ((itr->second->GetSession()->GetSecurity() > SEC_PLAYER && !gmInWhoList))
+            if (((*itr).accountSecurity > SEC_PLAYER && !gmInWhoList))
                 continue;
         }
 
-        //do not process players which are not in world
-        if (!(itr->second->IsInWorld()))
-            continue;
-
-        // check if target is globally visible for player
-        if (!(itr->second->IsVisibleGloballyFor(_player)))
-            continue;
-
         // check if target's level is in level range
-        uint32 lvl = itr->second->getLevel();
+        uint32 lvl = (*itr).playerLevel;
         if (lvl < level_min || lvl > level_max)
             continue;
 
         // check if class matches classmask
-        uint32 class_ = itr->second->getClass();
+        uint32 class_ = (*itr).playerClass;
         if (!(classmask & (1 << class_)))
             continue;
 
         // check if race matches racemask
-        uint32 race = itr->second->getRace();
+        uint32 race = (*itr).playerRace;
         if (!(racemask & (1 << race)))
             continue;
 
-        uint32 pzoneid = 0;
-        if (fakeArenaMembersInWhoList && itr->second->InArena())
-        {
-            pzoneid = sMapMgr->GetZoneId(
-                itr->second->GetBattleGroundEntryPoint().GetMapId(),
-                itr->second->GetBattleGroundEntryPoint().GetPositionX(),
-                itr->second->GetBattleGroundEntryPoint().GetPositionY(),
-                itr->second->GetBattleGroundEntryPoint().GetPositionZ());
-        }
-        else
-            pzoneid = itr->second->GetZoneId();
-
-        uint8 gender = itr->second->getGender();
+        uint32 pzoneid = (*itr).zoneId;
+        uint8 gender = (*itr).playerGender;
 
         bool z_show = true;
         for (uint32 i = 0; i < zones_count; ++i)
@@ -309,27 +290,15 @@ void WorldSession::HandleWhoOpcode(WorldPacket & recv_data)
         if (!z_show)
             continue;
 
-        std::string pname = itr->second->GetName();
-        std::wstring wpname;
-        if (!Utf8toWStr(pname, wpname))
-            continue;
-        wstrToLower(wpname);
-
+        std::wstring wpname = (*itr).wPlayerName;
         if (!(wplayer_name.empty() || wpname.find(wplayer_name) != std::wstring::npos))
             continue;
 
-        std::string gname = sObjectMgr->GetGuildNameById(itr->second->GetGuildId());
-        std::wstring wgname;
-        if (!Utf8toWStr(gname, wgname))
-            continue;
-        wstrToLower(wgname);
-
+        std::wstring wgname = (*itr).wGuildName;
         if (!(wguild_name.empty() || wgname.find(wguild_name) != std::wstring::npos))
             continue;
 
-        std::string aname;
-        if (AreaTableEntry const* areaEntry = GetAreaEntryByAreaID(itr->second->GetZoneId()))
-            aname = areaEntry->area_name[GetSessionDbcLocale()];
+        std::string aname = (*itr).zoneName;
 
         bool s_show = true;
         for (uint32 i = 0; i < str_count; ++i)
@@ -349,22 +318,27 @@ void WorldSession::HandleWhoOpcode(WorldPacket & recv_data)
         if (!s_show)
             continue;
 
-        data << pname;                                      // player name
-        data << gname;                                      // guild name
+        // 50 is maximum player count sent to client
+        if (matchcount >= 50)
+        {
+            ++matchcount;
+            continue;
+        }
+
+        data << (*itr).playerName;                          // player name
+        data << (*itr).guildName;                           // guild name
         data << uint32(lvl);                                // player level
         data << uint32(class_);                             // player class
         data << uint32(race);                               // player race
         data << uint8(gender);                              // player gender
         data << uint32(pzoneid);                            // player zone id
 
-        // 49 is maximum player count sent to client - can be overridden
-        // through config, but is unstable
-        if ((++displaycount) == sWorld->getConfig(CONFIG_MAX_WHO))
-            break;
+        ++matchcount;
+        ++displaycount;
     }
 
     data.put(0, displaycount);                              // insert right count, count displayed
-    data.put(4, displaycount);                                // insert right count, count of matches
+    data.put(4, displaycount);                              // insert right count, count of matches
 
     SendPacket(&data);
     sLog->outDebug("WORLD: Send SMSG_WHO Message");

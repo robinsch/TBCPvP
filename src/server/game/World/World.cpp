@@ -1503,12 +1503,10 @@ void World::SetInitialWorldSettings()
     m_timers[WUPDATE_SESSIONS].SetInterval(0);
     m_timers[WUPDATE_WEATHERS].SetInterval(IN_MILLISECONDS);
     m_timers[WUPDATE_AUCTIONS].SetInterval(MINUTE*IN_MILLISECONDS);
-    m_timers[WUPDATE_UPTIME].SetInterval(m_configs[CONFIG_UPTIME_UPDATE]*MINUTE*IN_MILLISECONDS);
-                                                            //Update "uptime" table based on configuration entry in minutes.
-    m_timers[WUPDATE_CORPSES].SetInterval(20 * MINUTE * IN_MILLISECONDS);
-                                                            //erase corpses every 20 minutes
-    m_timers[WUPDATE_CLEANDB].SetInterval(m_configs[CONFIG_LOGDB_CLEARINTERVAL]*MINUTE*IN_MILLISECONDS);
-                                                            // clean logs table every 14 days by default
+    m_timers[WUPDATE_UPTIME].SetInterval(m_configs[CONFIG_UPTIME_UPDATE]*MINUTE*IN_MILLISECONDS); // Update "uptime" table based on configuration entry in minutes.
+    m_timers[WUPDATE_CORPSES].SetInterval(20 * MINUTE * IN_MILLISECONDS); // erase corpses every 20 minutes
+    m_timers[WUPDATE_CLEANDB].SetInterval(m_configs[CONFIG_LOGDB_CLEARINTERVAL]*MINUTE*IN_MILLISECONDS); // clean logs table every 14 days by default
+    m_timers[WUPDATE_CACHE].SetInterval(30 * IN_MILLISECONDS); // Update who list cache every 30 seconds
 
     //to set mailtimer to return mails every day between 4 and 5 am
     //mailtimer is increased when updating auctions
@@ -1823,6 +1821,13 @@ void World::Update(time_t diff)
         uint32 nextGameEvent = sGameEventMgr->Update();
         m_timers[WUPDATE_EVENTS].SetInterval(nextGameEvent);
         m_timers[WUPDATE_EVENTS].Reset();
+    }
+
+    // Update who list cache
+    if (m_timers[WUPDATE_CACHE].Passed())
+    {
+        m_timers[WUPDATE_CACHE].Reset();
+        UpdateWhoListInfo();
     }
 
     // update the instance reset times
@@ -2467,4 +2472,55 @@ void World::LoadDBVersion()
     }
     else
         m_DBVersion = "unknown world database";
+}
+
+void World::UpdateWhoListInfo()
+{
+    m_whoListPlayerInfo.clear();
+    m_whoListPlayerInfo.reserve(m_sessions.size() - m_QueuedPlayer.size() + 1);
+
+    TRINITY_READ_GUARD(HashMapHolder<Player>::LockType, *HashMapHolder<Player>::GetLock());
+    HashMapHolder<Player>::MapType const& m = sObjectAccessor->GetPlayers();
+    for (HashMapHolder<Player>::MapType::const_iterator itr = m.begin(); itr != m.end(); ++itr)
+    {
+        if (itr->second->GetSession()->PlayerLoading())
+            continue;
+
+        TeamId teamId = itr->second->GetTeamId();
+        AccountTypes accountSecurity = AccountTypes(itr->second->GetSession()->GetSecurity());
+        uint8 playerLevel = itr->second->getLevel();
+        Classes playerClass = Classes(itr->second->getClass());
+        Races playerRace = Races(itr->second->getRace());
+        Gender playerGender = Gender(itr->second->getGender());
+
+        uint32 zoneId = 0;
+        if (getConfig(CONFIG_ENABLE_FAKE_WHO_ON_ARENA) && itr->second->InArena())
+        {
+            zoneId = sMapMgr->GetZoneId(
+                itr->second->GetBattleGroundEntryPoint().GetMapId(),
+                itr->second->GetBattleGroundEntryPoint().GetPositionX(),
+                itr->second->GetBattleGroundEntryPoint().GetPositionY(),
+                itr->second->GetBattleGroundEntryPoint().GetPositionZ());
+        }
+        else
+            zoneId = itr->second->GetZoneId();
+
+        std::string playerName = itr->second->GetName();
+        std::wstring wPlayerName;
+        if (!Utf8toWStr(playerName, wPlayerName))
+            continue;
+        wstrToLower(wPlayerName);
+
+        std::string guildName = sObjectMgr->GetGuildNameById(itr->second->GetGuildId());
+        std::wstring wGuildName;
+        if (!Utf8toWStr(guildName, wGuildName))
+            continue;
+        wstrToLower(wGuildName);
+
+        std::string zoneName;
+        if (AreaTableEntry const* areaEntry = GetAreaEntryByAreaID(itr->second->GetZoneId()))
+            zoneName = areaEntry->area_name[m_defaultDbcLocale];
+
+        m_whoListPlayerInfo.push_back(WhoListPlayerInfo(teamId, accountSecurity, playerLevel, playerClass, playerRace, zoneId, playerGender, wPlayerName, wGuildName, playerName, guildName, zoneName));
+    }
 }

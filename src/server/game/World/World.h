@@ -67,16 +67,17 @@ enum ShutdownExitCode
 // Timers for different object refresh rates
 enum WorldTimers
 {
-    WUPDATE_OBJECTS     = 0,
-    WUPDATE_SESSIONS    = 1,
-    WUPDATE_AUCTIONS    = 2,
-    WUPDATE_WEATHERS    = 3,
-    WUPDATE_UPTIME      = 4,
-    WUPDATE_CORPSES     = 5,
-    WUPDATE_EVENTS      = 6,
-    WUPDATE_CLEANDB     = 7,
-    WUPDATE_AUTOBROADCAST = 8,
-    WUPDATE_COUNT       = 9
+    WUPDATE_OBJECTS,
+    WUPDATE_SESSIONS,
+    WUPDATE_AUCTIONS,
+    WUPDATE_WEATHERS,
+    WUPDATE_UPTIME,
+    WUPDATE_CORPSES,
+    WUPDATE_EVENTS,
+    WUPDATE_CLEANDB,
+    WUPDATE_AUTOBROADCAST,
+    WUPDATE_CACHE,
+    WUPDATE_COUNT
 };
 
 // Configuration elements
@@ -447,6 +448,27 @@ struct CliCommandHolder
     ~CliCommandHolder() { delete[] m_command; }
 };
 
+// Storage class for Who List info
+struct WhoListPlayerInfo
+{
+    TeamId teamId;
+    AccountTypes accountSecurity;
+    uint8 playerLevel;
+    Classes playerClass;
+    Races playerRace;
+    uint32 zoneId;
+    Gender playerGender;
+    std::wstring wPlayerName;
+    std::wstring wGuildName;
+    std::string playerName;
+    std::string guildName;
+    std::string zoneName;
+
+    WhoListPlayerInfo(TeamId teamId, AccountTypes accountSecurity, uint8 playerLevel, Classes playerClass, Races playerRace, uint32 zoneId,
+        Gender playerGender, std::wstring wPlayerName, std::wstring wGuildName, std::string playerName, std::string guildName, std::string zoneName) :
+    teamId(teamId), accountSecurity(accountSecurity), playerLevel(playerLevel), playerClass(playerClass), playerRace(playerRace), zoneId(zoneId), playerGender(playerGender), wPlayerName(wPlayerName), wGuildName(wGuildName), playerName(playerName), guildName(guildName), zoneName(zoneName) { }
+};
+
 // The World
 class World
 {
@@ -619,6 +641,9 @@ class World
 
         void UpdateAllowedSecurity();
 
+        void UpdateWhoListInfo();
+        std::vector<WhoListPlayerInfo> * GetWhoListInfo() { return &m_whoListPlayerInfo; }
+
         std::string VisualCharName;
 
         LocaleConstant GetAvailableDbcLocale(LocaleConstant locale) const { if (m_availableDbcLocaleMask & (1 << locale)) return locale; else return m_defaultDbcLocale; }
@@ -669,6 +694,7 @@ class World
         uint32 m_maxQueuedSessionCount;
         uint32 m_PlayerCount;
         uint32 m_MaxPlayerCount;
+        std::vector<WhoListPlayerInfo> m_whoListPlayerInfo;
 
         std::string m_newCharString;
 
