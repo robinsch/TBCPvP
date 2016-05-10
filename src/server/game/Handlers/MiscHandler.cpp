@@ -173,8 +173,6 @@ void WorldSession::HandleWhoOpcode(WorldPacket & recv_data)
     sLog->outDebug("WORLD: Recvd CMSG_WHO Message");
     //recv_data.hexlike();
 
-    uint32 matchcount = 0;
-
     uint32 level_min, level_max, racemask, classmask, zones_count, str_count;
     uint32 zoneids[10];                                     // 10 is client limit
     std::string player_name, guild_name;
@@ -239,9 +237,10 @@ void WorldSession::HandleWhoOpcode(WorldPacket & recv_data)
     bool gmInWhoList               = sWorld->getConfig(CONFIG_GM_IN_WHO_LIST);
 
     uint32 displaycount = 0;
+    uint32 matchcount = 0;
 
     WorldPacket data(SMSG_WHO, 50);                         // guess size
-    data << uint32(displaycount);                           // placeholder, count of players matching criteria
+    data << uint32(matchcount);                             // placeholder, count of players matching criteria
     data << uint32(displaycount);                           // placeholder, count of players displayed
 
     std::vector<WhoListPlayerInfo> * m = sWorld->GetWhoListInfo();
@@ -319,7 +318,7 @@ void WorldSession::HandleWhoOpcode(WorldPacket & recv_data)
             continue;
 
         // 50 is maximum player count sent to client
-        if (matchcount >= 50)
+        if (matchcount >= 49)
         {
             ++matchcount;
             continue;
