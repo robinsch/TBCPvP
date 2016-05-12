@@ -9350,7 +9350,7 @@ bool Unit::canDetectStealthOf(Unit const* target, float distance) const
     /// Collision
     float combatReach = 0.25f;
 
-    if (Unit const* unit = ToUnit())
+    if (GetTypeId() == TYPEID_UNIT)
         combatReach = GetCombatReach();
 
     if (distance < combatReach)
@@ -9366,14 +9366,14 @@ bool Unit::canDetectStealthOf(Unit const* target, float distance) const
     if (!HasInArc(float(M_PI), target))
         return false;
 
-    /// Base Stealth Level: 350 * 0.3f (Stealth Level modifier)
+    /// Base Stealth Level * 0.3f (Stealth Level modifier)
     /// Detection distance without level difference is 5.0f
-    float detectionDistance = 110.0f;
+    float detectionDistance = target->getLevel() * 5.0f + 5.0f;
 
     detectionDistance += ((int32(getLevel()) - int32(target->getLevel())) * 0.5f); // 0.5f for every level difference
 
     detectionDistance += (m_stealthDetect.GetValue(STEALTH_GENERAL) * 0.3f);
-    detectionDistance -= (float(target->m_stealth.GetValue(STEALTH_GENERAL)) * 0.3f);
+    detectionDistance -= (target->m_stealth.GetValue(STEALTH_GENERAL) * 0.3f);
     detectionDistance = detectionDistance > MAX_PLAYER_STEALTH_DETECT_RANGE ? MAX_PLAYER_STEALTH_DETECT_RANGE : std::max(0.0f, detectionDistance);
 
     return distance < detectionDistance;
