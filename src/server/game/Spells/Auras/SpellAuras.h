@@ -214,6 +214,8 @@ class Aura
         void HandleManaShield(bool apply, bool Real);
         void HandleArenaPreparation(bool apply, bool Real);
         void HandleAuraReflectSpellSchool(bool apply, bool Real);
+        void HandleModStealthDetect(bool apply, bool Real);
+        void HandleModStealthLevel(bool apply, bool Real);
 
         virtual ~Aura();
 

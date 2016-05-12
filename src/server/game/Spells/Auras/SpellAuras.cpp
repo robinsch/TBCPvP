@@ -71,7 +71,7 @@ pAuraHandler AuraHandler[TOTAL_AURAS]=
     &Aura::HandleNoImmediateEffect,                         // 14 SPELL_AURA_MOD_DAMAGE_TAKEN implemented in Unit::MeleeDamageBonusTaken and Unit::SpellBaseDamageBonusTaken
     &Aura::HandleNoImmediateEffect,                         // 15 SPELL_AURA_DAMAGE_SHIELD    implemented in Unit::DoAttackDamage
     &Aura::HandleModStealth,                                // 16 SPELL_AURA_MOD_STEALTH
-    &Aura::HandleNoImmediateEffect,                         // 17 SPELL_AURA_MOD_STEALTH_DETECT
+    &Aura::HandleModStealthDetect,                          // 17 SPELL_AURA_MOD_STEALTH_DETECT
     &Aura::HandleInvisibility,                              // 18 SPELL_AURA_MOD_INVISIBILITY
     &Aura::HandleInvisibilityDetect,                        // 19 SPELL_AURA_MOD_INVISIBILITY_DETECTION
     &Aura::HandleAuraModTotalHealthPercentRegen,            // 20 SPELL_AURA_OBS_MOD_HEALTH
@@ -208,7 +208,7 @@ pAuraHandler AuraHandler[TOTAL_AURAS]=
     &Aura::HandleAuraTrackStealthed,                        //151 SPELL_AURA_TRACK_STEALTHED
     &Aura::HandleNoImmediateEffect,                         //152 SPELL_AURA_MOD_DETECTED_RANGE implemented in Creature::GetAttackDistance
     &Aura::HandleNoImmediateEffect,                         //153 SPELL_AURA_SPLIT_DAMAGE_FLAT
-    &Aura::HandleNoImmediateEffect,                         //154 SPELL_AURA_MOD_STEALTH_LEVEL
+    &Aura::HandleModStealthLevel,                           //154 SPELL_AURA_MOD_STEALTH_LEVEL
     &Aura::HandleNoImmediateEffect,                         //155 SPELL_AURA_MOD_WATER_BREATHING
     &Aura::HandleNoImmediateEffect,                         //156 SPELL_AURA_MOD_REPUTATION_GAIN
     &Aura::HandleNULL,                                      //157 SPELL_AURA_PET_DAMAGE_MULTI
@@ -3323,22 +3323,20 @@ void Aura::HandleAuraModStun(bool apply, bool Real)
 
 void Aura::HandleModStealth(bool apply, bool Real)
 {
+    StealthType type = StealthType(m_spellProto->EffectMiscValue[m_effIndex]);
+
     if (apply)
     {
-        if (Real && m_target->GetTypeId() == TYPEID_PLAYER)
-        {
-            // drop flag at stealth in bg
-            m_target->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_UNATTACKABLE);
-
-            // remove player from the objective's active player count at stealth
-            //if (OutdoorPvP * pvp = m_target->ToPlayer()->GetOutdoorPvP())
-            //    pvp->HandlePlayerActivityChanged(m_target->ToPlayer());
-        }
-
         // only at real aura add
         if (Real)
         {
-            m_target->SetByteValue(UNIT_FIELD_BYTES_1, 2, 0x02);
+            m_target->m_stealth.AddFlag(type);
+            m_target->m_stealth.AddValue(type, m_modifier.m_amount);
+
+            if (m_target->GetTypeId() == TYPEID_PLAYER)
+                m_target->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_UNATTACKABLE);
+
+            m_target->SetStandFlags(UNIT_STAND_FLAGS_CREEP);
             if (m_target->GetTypeId() == TYPEID_PLAYER)
                 m_target->SetByteFlag(PLAYER_FIELD_BYTES2, 3, PLAYER_FIELD_BYTE2_STEALTH);
 
@@ -3362,6 +3360,8 @@ void Aura::HandleModStealth(bool apply, bool Real)
         // only at real aura remove
         if (Real)
         {
+            m_target->m_stealth.AddValue(type, -m_modifier.m_amount);
+
             // for RACE_NIGHTELF stealth
             if (m_target->GetTypeId() == TYPEID_PLAYER && GetId() == 20580)
                 m_target->RemoveAurasDueToSpell(21009);
@@ -3369,7 +3369,9 @@ void Aura::HandleModStealth(bool apply, bool Real)
             // if last SPELL_AURA_MOD_STEALTH and no GM invisibility
             if (!m_target->HasAuraType(SPELL_AURA_MOD_STEALTH) && m_target->GetVisibility() != VISIBILITY_OFF)
             {
-                m_target->SetByteValue(UNIT_FIELD_BYTES_1, 2, 0x00);
+                m_target->m_stealth.DelFlag(type);
+
+                m_target->RemoveStandFlags(UNIT_STAND_FLAGS_CREEP);
                 if (m_target->GetTypeId() == TYPEID_PLAYER)
                     m_target->RemoveByteFlag(PLAYER_FIELD_BYTES2, 3, PLAYER_FIELD_BYTE2_STEALTH);
 
@@ -3982,9 +3984,15 @@ void Aura::HandleAuraModStalked(bool apply, bool Real)
 {
     // used by spells: Hunter's Mark, Mind Vision, Syndicate Tracker (MURP) DND
     if (apply)
+    {
+        m_target->setStalkerGUID(m_caster_guid);
         m_target->SetFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_TRACK_UNIT);
+    }
     else
+    {
+        m_target->setStalkerGUID(0);
         m_target->RemoveFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_TRACK_UNIT);
+    }
 }
 
 /*********************************************************/
@@ -6532,6 +6540,34 @@ void Aura::HandleAuraReflectSpellSchool(bool apply, bool real)
                 GetModifier()->m_amount += pTarget->HasSpell(11189) ? 10.0f : pTarget->HasSpell(28332) ? 20.0f : 0.0f;
         }
     }
+}
+
+void Aura::HandleModStealthDetect(bool apply, bool Real)
+{
+    StealthType type = StealthType(m_spellProto->EffectMiscValue[m_effIndex]);
+
+    if (apply)
+    {
+        m_target->m_stealthDetect.AddFlag(type);
+        m_target->m_stealthDetect.AddValue(type, m_modifier.m_amount);
+    }
+    else
+    {
+        if (!m_target->HasAuraType(SPELL_AURA_MOD_STEALTH_DETECT))
+            m_target->m_stealthDetect.DelFlag(type);
+
+        m_target->m_stealthDetect.AddValue(type, -m_modifier.m_amount);
+    }
+}
+
+void Aura::HandleModStealthLevel(bool apply, bool Real)
+{
+    StealthType type = StealthType(m_spellProto->EffectMiscValue[m_effIndex]);
+
+    if (apply)
+        m_target->m_stealth.AddValue(type, m_modifier.m_amount);
+    else
+        m_target->m_stealth.AddValue(type, -m_modifier.m_amount);
 }
 
 void Aura::UnregisterSingleCastAura()

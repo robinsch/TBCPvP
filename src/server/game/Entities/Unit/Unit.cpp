@@ -315,6 +315,7 @@ Unit::Unit()
     m_unit_movement_flags = 0;
     m_reducedThreatPercent = 0;
     m_misdirectionTargetGUID = 0;
+    m_stalkerGUID = 0;
 
     // remove aurastates allowing special moves
     for (uint8 i = 0; i < MAX_REACTIVE; ++i)
@@ -757,6 +758,18 @@ bool Unit::HasAuraTypeWithFamilyFlags(AuraType auraType, uint32 familyName  , ui
         if (SpellEntry const *iterSpellProto = (*itr)->GetSpellProto())
             if (iterSpellProto->SpellFamilyName == familyName && iterSpellProto->SpellFamilyFlags & familyFlags)
                 return true;
+    return false;
+}
+
+bool Unit::HasAuraTypeWithMiscValue(AuraType auraType, int32 miscValue) const
+{
+    AuraList const &auras = GetAurasByType(auraType);
+    for (AuraList::const_iterator itr = auras.begin(); itr != auras.end(); ++itr)
+        if (SpellEntry const *iterSpellProto = (*itr)->GetSpellProto())
+            for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+                if (iterSpellProto->EffectMiscValue[i] == miscValue)
+                    return true;
+
     return false;
 }
 
@@ -9331,37 +9344,39 @@ bool Unit::canDetectInvisibilityOf(Unit const* u) const
 
 bool Unit::canDetectStealthOf(Unit const* target, float distance) const
 {
-    // Prohibit Spectators from detecting stealthed players
-    if (GetTypeId() == TYPEID_PLAYER)
-    {
-        if (ToPlayer()->isSpectator())
-            return false;
-    }
-
-    if (distance < 0.24f) //collision
+    if (!target->m_stealth.GetFlags())
         return true;
 
-    if (HasAuraType(SPELL_AURA_DETECT_STEALTH))
+    /// Collision
+    float combatReach = 0.25f;
+
+    if (Unit const* unit = ToUnit())
+        combatReach = GetCombatReach();
+
+    if (distance < combatReach)
         return true;
 
-    AuraList const& auras = target->GetAurasByType(SPELL_AURA_MOD_STALKED); // Hunter mark
-    for (AuraList::const_iterator iter = auras.begin(); iter != auras.end(); ++iter)
-        if ((*iter)->GetCasterGUID() == GetGUID())
-            return true;
+    if (HasAuraTypeWithMiscValue(SPELL_AURA_DETECT_STEALTH, STEALTH_GENERAL))
+        return true;
 
-    if (!HasInArc(M_PI, target)) //behind
+    // SPELL_AURA_MOD_STALKED
+    if (target->isStalkedByGUID(GetGUID()))
+        return true;
+
+    if (!HasInArc(float(M_PI), target))
         return false;
-    
-    //Visible distance based on stealth value (stealth rank 4 300MOD, 10.5 - 3 = 7.5)
-    float visibleDistance = 7.5f;
-    //Visible distance is modified by -Level Diff (every level diff = 1.0f in visible distance)
-    visibleDistance += float(getLevelForTarget(target)) - target->GetTotalAuraModifier(SPELL_AURA_MOD_STEALTH)/5.0f;
-    //-Stealth Mod(positive like Master of Deception) and Stealth Detection(negative like paranoia)
-    //based on wowwiki every 5 mod we have 1 more level diff in calculation
-    visibleDistance += (float)(GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_STEALTH_DETECT, 0) - target->GetTotalAuraModifier(SPELL_AURA_MOD_STEALTH_LEVEL)) / 5.0f;
-    visibleDistance = visibleDistance > MAX_PLAYER_STEALTH_DETECT_RANGE ? MAX_PLAYER_STEALTH_DETECT_RANGE : visibleDistance;
 
-    return distance < visibleDistance;
+    /// Base Stealth Level: 350 * 0.3f (Stealth Level modifier)
+    /// Detection distance without level difference is 5.0f
+    float detectionDistance = 110.0f;
+
+    detectionDistance += ((int32(getLevel()) - int32(target->getLevel())) * 0.5f); // 0.5f for every level difference
+
+    detectionDistance += (m_stealthDetect.GetValue(STEALTH_GENERAL) * 0.3f);
+    detectionDistance -= (float(target->m_stealth.GetValue(STEALTH_GENERAL)) * 0.3f);
+    detectionDistance = detectionDistance > MAX_PLAYER_STEALTH_DETECT_RANGE ? MAX_PLAYER_STEALTH_DETECT_RANGE : std::max(0.0f, detectionDistance);
+
+    return distance < detectionDistance;
 }
 
 void Unit::SetVisibility(UnitVisibility x, uint32 updateDelay)

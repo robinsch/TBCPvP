@@ -1499,8 +1499,6 @@ void World::SetInitialWorldSettings()
         realmID, uint64(m_startTime), isoDate, _FULLVERSION);       // One-time query
 
     m_timers[WUPDATE_AUTOBROADCAST].SetInterval(m_configs[CONFIG_AUTOBROADCAST_TIMER]);
-    m_timers[WUPDATE_OBJECTS].SetInterval(IN_MILLISECONDS/2);
-    m_timers[WUPDATE_SESSIONS].SetInterval(0);
     m_timers[WUPDATE_WEATHERS].SetInterval(IN_MILLISECONDS);
     m_timers[WUPDATE_AUCTIONS].SetInterval(MINUTE*IN_MILLISECONDS);
     m_timers[WUPDATE_UPTIME].SetInterval(m_configs[CONFIG_UPTIME_UPDATE]*MINUTE*IN_MILLISECONDS); // Update "uptime" table based on configuration entry in minutes.

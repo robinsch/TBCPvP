@@ -1803,7 +1803,7 @@ void Player::Update(uint32 p_time)
         if (p_time >= m_DetectInvTimer)
         {
             HandleStealthedUnitsDetection();
-            m_DetectInvTimer = 3000;
+            m_DetectInvTimer = 300;
         }
         else
             m_DetectInvTimer -= p_time;
@@ -19927,24 +19927,6 @@ bool Player::canSeeOrDetect(Unit const* u, bool detect, bool inVisibleList, bool
         if (GetGUID() == guid)
             return true;
 
-    // Duel Phasing System
-    if (this->duel)
-    {
-        // Only see the duel opponent
-        if (u->GetTypeId() == TYPEID_PLAYER && this->duel->opponent != u->ToPlayer() && duel->startTime != 0)
-            return false;
-        // Is creature a pet?
-        if (u->GetTypeId() != TYPEID_PLAYER && u->ToCreature()->isPet() && duel->startTime != 0)
-        {
-            // Only display pet if it belongs to the duel
-            if (u->ToCreature()->GetOwner()->ToPlayer() != this->duel->opponent)
-                return false;
-        }
-        // Do not display any friendly units
-        if (u->GetTypeId() != TYPEID_PLAYER && u->IsFriendlyTo(this) && duel->startTime != 0)
-            return false;
-    }
-
     if (uint64 guid = GetUInt64Value(PLAYER_FARSIGHT))
         if (u->GetGUID() == guid)
             return true;
@@ -20023,10 +20005,9 @@ bool Player::canSeeOrDetect(Unit const* u, bool detect, bool inVisibleList, bool
         // stealth and detected and visible for some seconds
         if (!isAlive())
             detect = false;
-        if (m_DetectInvTimer < 300 || !HaveAtClient(u))
-            if (!(u->GetTypeId() == TYPEID_PLAYER && !IsHostileTo(u) && IsGroupVisibleFor(const_cast<Player*>(u->ToPlayer()))))
-                if (!detect || !m_mover->canDetectStealthOf(u, GetDistance(u)))
-                    return false;
+        if (!(u->GetTypeId() == TYPEID_PLAYER && !IsHostileTo(u) && IsGroupVisibleFor(const_cast<Player*>(u->ToPlayer()))))
+            if (!detect || !m_mover->canDetectStealthOf(u, GetDistance(u)))
+                return false;
     }
 
     // If use this server will be too laggy
@@ -20146,7 +20127,7 @@ void Player::UpdateVisibilityOf(WorldObject* target)
 {
     if (HaveAtClient(target))
     {
-        if (!target->isVisibleForInState(this, true))
+        if (!canSeeOrDetect(target->ToUnit(), true))
         {
             if (target->GetTypeId() == TYPEID_UNIT)
                 BeforeVisibilityDestroy<Creature>(target->ToCreature(), this);
@@ -20162,7 +20143,7 @@ void Player::UpdateVisibilityOf(WorldObject* target)
     }
     else
     {
-        if (target->isVisibleForInState(this, false))
+        if (canSeeOrDetect(target->ToUnit(), false))
         {
             target->SendUpdateToPlayer(this);
             if (target->GetTypeId() != TYPEID_GAMEOBJECT||!((GameObject*)target)->IsTransport())

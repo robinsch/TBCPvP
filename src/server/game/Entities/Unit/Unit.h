@@ -830,6 +830,30 @@ enum ReactiveType
 
 struct SpellProcEventEntry;                                 // used only privately
 
+template <class T_VALUES, class T_FLAGS, class FLAG_TYPE, uint8 ARRAY_SIZE>
+class FlaggedValuesArray32
+{
+    public:
+        FlaggedValuesArray32()
+        {
+            memset(&m_values, 0x00, sizeof(T_VALUES) * ARRAY_SIZE);
+            m_flags = 0;
+        }
+
+        T_FLAGS  GetFlags() const { return m_flags; }
+        bool     HasFlag(FLAG_TYPE flag) const { return m_flags & (1 << flag); }
+        void     AddFlag(FLAG_TYPE flag) { m_flags |= (1 << flag); }
+        void     DelFlag(FLAG_TYPE flag) { m_flags &= ~(1 << flag); }
+
+        T_VALUES GetValue(FLAG_TYPE flag) const { return m_values[flag]; }
+        void     SetValue(FLAG_TYPE flag, T_VALUES value) { m_values[flag] = value; }
+        void     AddValue(FLAG_TYPE flag, T_VALUES value) { m_values[flag] += value; }
+
+    private:
+        T_VALUES m_values[ARRAY_SIZE];
+        T_FLAGS m_flags;
+};
+
 class Unit : public WorldObject
 {
     public:
@@ -1086,6 +1110,7 @@ class Unit : public WorldObject
 
         bool HasAuraType(AuraType auraType) const;
         bool HasAuraTypeWithFamilyFlags(AuraType auraType, uint32 familyName,  uint64 familyFlags) const;
+        bool HasAuraTypeWithMiscValue(AuraType auraType, int32 miscValue) const;
         bool HasAura(uint32 spellId, uint32 effIndex) const
             { return m_Auras.find(spellEffectPair(spellId, effIndex)) != m_Auras.end(); }
 
@@ -1235,6 +1260,10 @@ class Unit : public WorldObject
         bool HasSharedVision() const { return !m_sharedVision.empty(); }
         void RemoveBindSightAuras();
         void RemoveCharmAuras();
+
+        bool isStalkedByGUID(uint64 guid) const { return m_stalkerGUID == guid; }
+        uint64 getStalkerGUID(uint64 guid) const { return m_stalkerGUID; }
+        void setStalkerGUID(uint64 guid) { m_stalkerGUID = guid; }
 
         Pet* CreateTamedPetFrom(Creature* creatureTarget, uint32 spell_id = 0);
 
@@ -1388,6 +1417,9 @@ class Unit : public WorldObject
         bool canDetectInvisibilityOf(Unit const* u) const;
         bool canDetectStealthOf(Unit const* u, float distance) const;
         void UpdateObjectVisibility(bool forced = true);
+
+        FlaggedValuesArray32<int32, uint32, StealthType, TOTAL_STEALTH_TYPES> m_stealth;
+        FlaggedValuesArray32<int32, uint32, StealthType, TOTAL_STEALTH_TYPES> m_stealthDetect;
 
         void SetPhaseMask(uint32 newPhaseMask, bool update) override;// overwrite WorldObject::SetPhaseMask
 
@@ -1645,6 +1677,8 @@ class Unit : public WorldObject
         //std::list< spellEffectPair > AuraSpells[TOTAL_AURAS];  // TODO: use this if ok for mem
 
         float m_speed_rate[MAX_MOVE_TYPE];
+
+        uint64 m_stalkerGUID;
 
         CharmInfo *m_charmInfo;
         SharedVisionList m_sharedVision;
