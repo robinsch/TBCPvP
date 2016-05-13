@@ -283,6 +283,8 @@ static bool floodRegion(int x, int y, int i,
 				if (chf.areas[ai] != area)
 					continue;
 				unsigned short nr = srcReg[ai];
+				if (nr & RC_BORDER_REG) // Do not take borders into account.
+					continue;
 				if (nr != 0 && nr != r)
 					ar = nr;
 				

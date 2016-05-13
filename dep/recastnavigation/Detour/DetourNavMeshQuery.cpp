@@ -49,7 +49,7 @@ float dtQueryFilter::getCost(const float* pa, const float* pb,
 							 const dtPolyRef /*curRef*/, const dtMeshTile* /*curTile*/, const dtPoly* curPoly,
 							 const dtPolyRef /*nextRef*/, const dtMeshTile* /*nextTile*/, const dtPoly* /*nextPoly*/) const
 {
-	return dtVdist(pa, pb) * m_areaCost[curPoly->area];
+	return dtVdist(pa, pb) * m_areaCost[curPoly->getArea()];
 }
 #else
 inline bool dtQueryFilter::passFilter(const dtPolyRef /*ref*/,
@@ -87,6 +87,7 @@ void dtFreeNavMeshQuery(dtNavMeshQuery* navmesh)
 
 //////////////////////////////////////////////////////////////////////////////////////////
 dtNavMeshQuery::dtNavMeshQuery() :
+	m_nav(0),
 	m_tinyNodePool(0),
 	m_nodePool(0),
 	m_openList(0)
@@ -502,6 +503,10 @@ int dtNavMeshQuery::queryPolygonsInTile(const dtMeshTile* tile, const float* qmi
 		{
 			// Calc polygon bounds.
 			dtPoly* p = &tile->polys[i];
+			// Do not return off-mesh connection polygons.
+			if (p->getType() == DT_POLYTYPE_OFFMESH_CONNECTION)
+				continue;
+
 			const float* v = &tile->verts[p->verts[0]*3];
 			dtVcopy(bmin, v);
 			dtVcopy(bmax, v);
@@ -541,6 +546,15 @@ dtStatus dtNavMeshQuery::queryPolygons(const float* center, const float* extents
 	m_nav->calcTileLoc(bmax, &maxx, &maxy);
 
 	int n = 0;
+
+	/// pussywizard: additional checks as in PathGenerator::HaveTile
+	if (minx < 0) minx = 0; if (miny < 0) miny = 0; // min can be negative because we subtract extents (few lines above)
+	if (maxx < 0 || maxy < 0 || maxx-minx >= 64 /*MAX_NUMBER_OF_GRIDS*/ || maxy-miny >= 64) // max should never be negative
+	{
+		*polyCount = n;
+		return DT_SUCCESS;
+	}
+
 	for (int y = miny; y <= maxy; ++y)
 	{
 		for (int x = minx; x <= maxx; ++x)
