@@ -229,7 +229,7 @@ Unit::Unit()
 : WorldObject(), i_motionMaster(this), m_ThreatManager(this), m_HostileRefManager(this)
 , IsAIEnabled(false), NeedChangeAI(false)
 , i_AI(NULL), i_disabledAI(NULL), m_removedAurasCount(0), m_procDeep(0)
-, m_ControlledByPlayer(false)
+, m_ControlledByPlayer(false), m_lastSanctuaryTime(0)
 {
     m_objectType |= TYPEMASK_UNIT;
     m_objectTypeId = TYPEID_UNIT;
@@ -12979,4 +12979,21 @@ void Unit::SetPhaseMask(uint32 newPhaseMask, bool update)
         UpdateObjectVisibility();
 }
 
+void Unit::InterruptNearbyCasters(float distance)
+{
+    std::list<Unit*> targets;
+    Trinity::AnyUnfriendlyUnitInObjectRangeCheck u_check(this, this, distance);
+    Trinity::UnitListSearcher<Trinity::AnyUnfriendlyUnitInObjectRangeCheck> searcher(this, targets, u_check);
+    VisitNearbyObject(distance, searcher);
+    for (std::list<Unit*>::iterator iter = targets.begin(); iter != targets.end(); ++iter)
+    {
+        if (!(*iter)->hasUnitState(UNIT_STAT_CASTING))
+            continue;
 
+        for (uint32 i = CURRENT_FIRST_NON_MELEE_SPELL; i < CURRENT_MAX_SPELL; i++)
+        {
+            if ((*iter)->GetCurrentSpell(i) && (*iter)->GetCurrentSpell(i)->m_targets.getUnitTargetGUID() == GetGUID())
+                (*iter)->InterruptSpell(CurrentSpellTypes(i), false);
+        }
+    }
+}

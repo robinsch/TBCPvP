@@ -3224,24 +3224,7 @@ void Aura::HandleFeignDeath(bool apply, bool Real)
         m_target->SendMessageToSet(&data, true);
         */
 
-        std::list<Unit*> targets;
-        Trinity::AnyUnfriendlyUnitInObjectRangeCheck u_check(m_target, m_target, m_target->GetMap()->GetVisibilityRange());
-        Trinity::UnitListSearcher<Trinity::AnyUnfriendlyUnitInObjectRangeCheck> searcher(m_target, targets, u_check);
-        m_target->VisitNearbyObject(m_target->GetMap()->GetVisibilityRange(), searcher);
-        for (std::list<Unit*>::iterator iter = targets.begin(); iter != targets.end(); ++iter)
-        {
-            if (!(*iter)->hasUnitState(UNIT_STAT_CASTING))
-                continue;
-
-            for (uint32 i = CURRENT_FIRST_NON_MELEE_SPELL; i < CURRENT_MAX_SPELL; i++)
-            {
-                if ((*iter)->GetCurrentSpell(i)
-                && (*iter)->GetCurrentSpell(i)->m_targets.getUnitTargetGUID() == m_target->GetGUID())
-                {
-                    (*iter)->InterruptSpell(CurrentSpellTypes(i), false);
-                }
-            }
-        }
+        m_target->InterruptNearbyCasters(m_target->GetVisibilityRange());
                                                             // blizz like 2.0.x
         m_target->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_29);
                                                             // blizz like 2.0.x
@@ -6551,6 +6534,8 @@ void Aura::HandleModStealthDetect(bool apply, bool Real)
 
         m_target->m_stealthDetect.AddValue(type, -m_modifier.m_amount);
     }
+
+    m_target->UpdateObjectVisibility();
 }
 
 void Aura::HandleModStealthLevel(bool apply, bool Real)
@@ -6561,6 +6546,8 @@ void Aura::HandleModStealthLevel(bool apply, bool Real)
         m_target->m_stealth.AddValue(type, m_modifier.m_amount);
     else
         m_target->m_stealth.AddValue(type, -m_modifier.m_amount);
+
+    m_target->UpdateObjectVisibility();
 }
 
 void Aura::UnregisterSingleCastAura()

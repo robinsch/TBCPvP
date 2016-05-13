@@ -5382,34 +5382,11 @@ void Spell::EffectSanctuary(uint32 /*i*/)
     if (!unitTarget)
         return;
 
-    std::list<Unit*> targets;
-    Trinity::AnyUnfriendlyUnitInObjectRangeCheck u_check(unitTarget, unitTarget, m_caster->GetMap()->GetVisibilityRange());
-    Trinity::UnitListSearcher<Trinity::AnyUnfriendlyUnitInObjectRangeCheck> searcher(unitTarget, targets, u_check);
-    unitTarget->VisitNearbyObject(m_caster->GetMap()->GetVisibilityRange(), searcher);
-    for (std::list<Unit*>::iterator iter = targets.begin(); iter != targets.end(); ++iter)
-    {
-        if (!(*iter)->hasUnitState(UNIT_STAT_CASTING))
-            continue;
+    unitTarget->m_lastSanctuaryTime = getMSTime();
 
-        for (uint32 i = CURRENT_FIRST_NON_MELEE_SPELL; i < CURRENT_MAX_SPELL; i++)
-        {
-            if ((*iter)->GetCurrentSpell(i)
-            && (*iter)->GetCurrentSpell(i)->m_targets.getUnitTargetGUID() == unitTarget->GetGUID())
-            {
-                (*iter)->InterruptSpell(CurrentSpellTypes(i), false);
-            }
-        }
-    }
-
+    unitTarget->getHostileRefManager().UpdateVisibility();
     unitTarget->CombatStop();
-    unitTarget->getHostileRefManager().deleteReferences();  // stop all fighting
-    // Vanish allows to remove all threat and cast regular stealth so other spells can be used
-    if (m_caster->GetTypeId() == TYPEID_PLAYER
-        && m_spellInfo->SpellFamilyName == SPELLFAMILY_ROGUE
-        && (m_spellInfo->SpellFamilyFlags & SPELLFAMILYFLAG_ROGUE_VANISH))
-    {
-        m_caster->ToPlayer()->RemoveSpellsCausingAura(SPELL_AURA_MOD_ROOT);
-    }
+    unitTarget->InterruptNearbyCasters(unitTarget->GetVisibilityRange());
 }
 
 void Spell::EffectAddComboPoints(uint32 /*i*/)

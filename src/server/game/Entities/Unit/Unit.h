@@ -1313,6 +1313,9 @@ class Unit : public WorldObject
 
         uint32 GetMaxRankSpellFromArray(uint32 array[], uint8 count);
 
+        // Interrupt nearby unfriendly units casting spells on this
+        void InterruptNearbyCasters(float distance);
+
         uint32 m_addDmgOnce;
         uint64 m_SummonSlot[MAX_SUMMON_SLOT];
         uint64 m_ObjectSlot[4];
@@ -1379,7 +1382,9 @@ class Unit : public WorldObject
 
         AuraList      & GetSingleCastAuras()       { return m_scAuras; }
         AuraList const& GetSingleCastAuras() const { return m_scAuras; }
+
         SpellImmuneList m_spellImmune[MAX_SPELL_IMMUNITY];
+        uint32 m_lastSanctuaryTime;
 
         // Threat related methods
         bool CanHaveThreatList() const;

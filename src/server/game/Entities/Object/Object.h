@@ -813,7 +813,7 @@ class WorldObject : public Object, public WorldLocation
         void GetGameObjectListWithEntryInGrid(std::list<GameObject*>& lList, uint32 uiEntry, float fMaxSearchRange);
         void GetCreatureListWithEntryInGrid(std::list<Creature*>& lList, uint32 uiEntry, float fMaxSearchRange);
 
-        void DestroyForNearbyPlayers(bool exceptGroup = false);
+        void DestroyForNearbyPlayers();
         virtual void UpdateObjectVisibility(bool forced = true);
         void BuildUpdate(UpdateDataMapType&);
 
