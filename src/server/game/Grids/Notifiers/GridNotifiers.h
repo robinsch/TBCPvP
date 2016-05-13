@@ -128,9 +128,11 @@ namespace Trinity
         float i_distSq;
         uint32 team;
         uint32 i_phaseMask;
-        MessageDistDeliverer(WorldObject *src, WorldPacket *msg, float dist, bool own_team_only = false, uint32 phaseMask = PHASEMASK_NORMAL)
+        Player const* skipped_receiver;
+        MessageDistDeliverer(WorldObject *src, WorldPacket *msg, float dist, bool own_team_only = false, uint32 phaseMask = PHASEMASK_NORMAL, Player const* skipped = nullptr)
             : i_source(src), i_message(msg), i_distSq(dist * dist)
             , team((own_team_only && src->GetTypeId() == TYPEID_PLAYER) ? ((Player*)src)->GetTeam() : 0), i_phaseMask(phaseMask)
+            , skipped_receiver(skipped)
         {
         }
         void Visit(PlayerMapType &m);
@@ -141,7 +143,10 @@ namespace Trinity
         void SendPacket(Player* plr)
         {
             // never send packet to self
-            if (plr == i_source || team && plr->GetTeam() != team)
+            if (plr == i_source || (team && plr->GetTeam() != team) || skipped_receiver == plr)
+                return;
+
+            if (!plr->HaveAtClient(i_source))
                 return;
 
             if (WorldSession* session = plr->GetSession())
@@ -805,7 +810,7 @@ namespace Trinity
                     return false;
 
                 if (u->isTargetableForAttack() && i_obj->IsWithinDistInMap(u, i_range) &&
-                    !i_funit->IsFriendlyTo(u) && u->isVisibleForOrDetect(i_funit, false))
+                    !i_funit->IsFriendlyTo(u) && u->canSeeOrDetect(i_funit))
                 {
                     i_range = i_obj->GetDistance(u);        // use found unit range as new range limit for next check
                     return true;
@@ -898,11 +903,6 @@ namespace Trinity
         bool operator()(Unit* u) { return !u->isAlive(); }
     };
 
-    struct AnyStealthedCheck
-    {
-        bool operator()(Unit* u) { return u->GetVisibility() == VISIBILITY_GROUP_STEALTH; }
-    };
-
     // Creature checks
 
     class NearestHostileUnitInAttackDistanceCheck
@@ -920,6 +920,9 @@ namespace Trinity
 
                 // TODO: addthreat for every enemy in range?
                 if (!me->IsWithinDistInMap(u, m_range))
+                    return false;
+
+                if (!me->canSeeOrDetect(u))
                     return false;
 
                 if (m_force)

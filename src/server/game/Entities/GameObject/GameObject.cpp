@@ -194,6 +194,20 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map *map, uint32 phaseMa
 
     SetGoAnimProgress(animprogress);
 
+    if (goinfo->type == GAMEOBJECT_TYPE_TRAP)
+    {
+        if (goinfo->trap.stealthed)
+        {
+            m_stealth.AddFlag( STEALTH_TRAP);
+            m_stealth.AddValue(STEALTH_TRAP, 300);
+        }
+        else if (goinfo->trap.invisible)
+        {
+            m_invisibility.AddFlag( INVISIBILITY_TRAP);
+            m_invisibility.AddValue(INVISIBILITY_TRAP, 70);
+        }
+    }
+
     SetUInt32Value(GAMEOBJECT_ARTKIT, artKit);
 
     SetZoneScript();
@@ -802,63 +816,42 @@ void GameObject::SaveRespawnTime()
         sObjectMgr->SaveGORespawnTime(m_DBTableGuid, GetInstanceId(), m_respawnTime);
 }
 
-bool GameObject::isVisibleForInState(Player const* u, bool inVisibleList) const
+bool GameObject::isAlwaysVisibleFor(WorldObject const* seer) const
 {
-    // Not in world
-    if (!IsInWorld() || !u->IsInWorld())
-        return false;
-
-    // Transport always visible at this step implementation
-    if (IsTransport() && IsInMap(u))
+    if (WorldObject::isAlwaysVisibleFor(seer))
         return true;
 
-    if (canNeverSee(u))
+    if (IsTransport())
+        return true;
+
+    if (!seer)
         return false;
 
-    // quick check visibility false cases for non-GM-mode
-    if (!u->isGameMaster())
+    // Always seen by owner and friendly units
+    if (uint64 guid = GetOwnerGUID())
     {
-        // despawned and then not visible for non-GM in GM-mode
-        if (!isSpawned())
-            return false;
+        if (seer->GetGUID() == guid)
+            return true;
 
-        // special invisibility cases
-        if (GetGOInfo()->type == GAMEOBJECT_TYPE_TRAP && GetGOInfo()->trap.stealthed)
-        {
-            Unit *owner = GetOwner();
-            if (owner && u->IsHostileTo(owner) && !canDetectTrap(u, GetDistance(u)))
-                return false;
-        }
-
-        // Smuggled Mana Cell required 10 invisibility type detection/state
-        if (GetEntry() == 187039 && ((u->m_detectInvisibilityMask | u->m_invisibilityMask) & (1<<10)) == 0)
-            return false;
+        Unit* owner = GetOwner();
+        if (Unit const* unitSeer = seer->ToUnit())
+            if (owner && owner->IsFriendlyTo(unitSeer))
+                return true;
     }
 
-    // check distance
-    return IsWithinDistInMap(u->m_seer, World::GetMaxVisibleDistanceForObject() +
-        (inVisibleList ? World::GetVisibleObjectGreyDistance() : 0.0f), false);
+    return false;
 }
 
-bool GameObject::canDetectTrap(Player const* u, float distance) const
+bool GameObject::isVisibleForInState(WorldObject const* seer) const
 {
-    if (u->hasUnitState(UNIT_STAT_STUNNED))
+    if (!WorldObject::isVisibleForInState(seer))
         return false;
-    if (distance < GetGOInfo()->size) //collision
-        return true;
-    if (!u->HasInArc(M_PI, this)) //behind
+
+    // Despawned
+    if (!isSpawned())
         return false;
-    if (u->HasAuraType(SPELL_AURA_DETECT_STEALTH))
-        return true;
 
-    //Visible distance is modified by -Level Diff (every level diff = 0.25f in visible distance)
-    float visibleDistance = (int32(u->getLevel()) - int32(GetOwner()->getLevel()))* 0.25f;
-    //GetModifier for trap (miscvalue 1)
-    //35y for aura 2836
-    //WARNING: these values are guessed, may be not blizzlike
-    visibleDistance += u->GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_STEALTH_DETECT, 1)* 0.5f;
-
-    return distance < visibleDistance;
+    return true;
 }
 
 void GameObject::Respawn()

@@ -122,7 +122,7 @@ inline void CreatureUnitRelocationWorker(Creature* c, Unit* u)
         return;
 
     if (c->HasReactState(REACT_AGGRESSIVE) && !c->hasUnitState(UNIT_STAT_SIGHTLESS))
-        if (c->_IsWithinDist(u, c->m_SightDistance, true) && c->IsAIEnabled)
+        if (c->IsAIEnabled && c->canSeeOrDetect(u, false, true))
             c->AI()->MoveInLineOfSight_Safe(u);
 }
 
@@ -331,7 +331,7 @@ MessageDistDeliverer::Visit(PlayerMapType &m)
         if (!target->InSamePhase(i_phaseMask))
             continue;
 
-        if (target->GetExactDistSq(i_source) > i_distSq)
+        if (target->GetExactDist2dSq(i_source) > i_distSq)
             continue;
 
         // Send packet to all who are sharing the player's vision
@@ -356,7 +356,7 @@ MessageDistDeliverer::Visit(CreatureMapType &m)
         if (!iter->getSource()->InSamePhase(i_phaseMask))
             continue;
 
-        if (iter->getSource()->GetExactDistSq(i_source) > i_distSq)
+        if (iter->getSource()->GetExactDist2dSq(i_source) > i_distSq)
             continue;
 
         // Send packet to all who are sharing the creature's vision
@@ -378,7 +378,7 @@ MessageDistDeliverer::Visit(DynamicObjectMapType &m)
         if (!iter->getSource()->InSamePhase(i_phaseMask))
             continue;
 
-        if (iter->getSource()->GetExactDistSq(i_source) > i_distSq)
+        if (iter->getSource()->GetExactDist2dSq(i_source) > i_distSq)
             continue;
 
         if (iter->getSource()->GetTypeId() == TYPEID_PLAYER)

@@ -576,7 +576,6 @@ class Creature : public Unit, public GridObject<Creature>
         CreatureSpellCooldowns m_CreatureCategoryCooldowns;
         uint32 m_GlobalCooldown;
 
-        bool canSeeOrDetect(Unit const* u, bool detect, bool inVisibleList = false, bool is3dDistance = true) const;
         bool canStartAttack(Unit const* u) const;
         float GetAttackDistance(Unit const* pl) const;
 
@@ -595,8 +594,6 @@ class Creature : public Unit, public GridObject<Creature>
         // for use only in LoadHelper, Map::Add Map::CreatureCellRelocation
         Cell const& GetCurrentCell() const { return m_currentCell; }
         void SetCurrentCell(Cell const& cell) { m_currentCell = cell; }
-
-        bool IsVisibleInGridForPlayer(Player const* pl) const;
 
         void HandleDelayedDeath(uint32 deathDelay);
         void RemoveCorpse(bool setSpawnTime = true);
@@ -671,6 +668,8 @@ class Creature : public Unit, public GridObject<Creature>
         void SetCombatDistance(float combatDistance) { m_CombatDistance = combatDistance; }
 
         float m_SightDistance;
+
+        bool isVisibleForInState(WorldObject const* seer) const;
     protected:
         bool CreateFromProto(uint32 guidlow, uint32 Entry, uint32 team, const CreatureData *data = NULL);
         bool InitEntry(uint32 entry, uint32 team=ALLIANCE, const CreatureData* data=NULL);

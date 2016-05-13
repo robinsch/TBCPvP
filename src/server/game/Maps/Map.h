@@ -53,6 +53,7 @@ struct ScriptInfo;
 struct ScriptAction;
 struct Position;
 class BattleGround;
+namespace Trinity { struct ObjectUpdater; }
 
 struct ScriptAction
 {
@@ -283,7 +284,9 @@ class Map : public GridRefManager<NGridType>
         void MessageDistBroadcast(WorldObject *, WorldPacket *, float dist);
         */
 
-        float GetVisibilityDistance() const { return m_VisibleDistance; }
+        void VisitNearbyCellsOf(WorldObject* obj, TypeContainerVisitor<Trinity::ObjectUpdater, GridTypeMapContainer> &gridVisitor, TypeContainerVisitor<Trinity::ObjectUpdater, WorldTypeMapContainer> &worldVisitor);
+
+        float GetVisibilityRange() const { return m_VisibleDistance; }
         //function for setting up visibility distance for maps on per-type/per-Id basis
         virtual void InitVisibilityDistance();
 

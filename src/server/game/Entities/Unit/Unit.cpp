@@ -265,11 +265,8 @@ Unit::Unit()
     m_ObjectSlot[0] = m_ObjectSlot[1] = m_ObjectSlot[2] = m_ObjectSlot[3] = 0;
 
     m_AurasUpdateIterator = m_Auras.end();
-    m_Visibility = VISIBILITY_ON;
 
     m_interruptMask = 0;
-    m_detectInvisibilityMask = 0;
-    m_invisibilityMask = 0;
     m_transform = 0;
     m_ShapeShiftFormSpellId = 0;
     m_canModifyStats = false;
@@ -302,7 +299,6 @@ Unit::Unit()
 
     m_CombatTimer = 0;
     m_lastManaUse = 0;
-    m_visibilityUpdateTimer = 0;
 
     //m_victimThreat = 0.0f;
     for (uint8 i = 0; i < MAX_SPELL_SCHOOL; ++i)
@@ -372,20 +368,6 @@ void Unit::Update(uint32 p_time)
         }
     }
 
-    // update visibility notify timer
-    if (m_visibilityUpdateTimer > 0)
-    {
-        if (p_time >= m_visibilityUpdateTimer)
-        {
-            if (m_Visibility == VISIBILITY_GROUP_STEALTH)
-                DestroyForNearbyPlayers(true);
-
-            UpdateObjectVisibility();
-            m_visibilityUpdateTimer = 0;
-        }
-        else
-            m_visibilityUpdateTimer -= p_time;
-    }
 
     // not implemented before 3.0.2
     if (uint32 base_att = getAttackTimer(BASE_ATTACK))
@@ -9006,16 +8988,6 @@ void Unit::CombatStart(Unit* target, bool initialAggro, uint32 spellId)
 
         SetInCombatWith(target);
 
-        // Special case for players
-        if (Player* plrTarget = target->ToPlayer())
-        {
-            if (plrTarget->GetVisibilityUpdateTimer() || (plrTarget->HasAuraType(SPELL_AURA_MOD_INVISIBILITY) || plrTarget->HasAuraTypeWithFamilyFlags(SPELL_AURA_MOD_STEALTH, SPELLFAMILY_ROGUE, SPELLFAMILYFLAG_ROGUE_VANISH)) && !plrTarget->isVisibleForOrDetect(this, true))
-                return;
-
-            if (plrTarget->GetCombatImmuneTime())
-                return;
-        }
-
         // Don't set target in combat when isolated
         if (!target->hasUnitState(UNIT_STAT_ISOLATED))
             target->SetInCombatWith(this);
@@ -9171,14 +9143,14 @@ bool Unit::canAttack(Unit const* target, bool force) const
     if (GetOwner() && GetOwner()->GetTypeId() == TYPEID_PLAYER)
         if (Player* owner = GetOwner()->ToPlayer())
         {
-            if (owner->canDetectStealthOf(target, GetDistance(target)))
+            if (owner->canDetectStealthOf(target))
                 return true;
         }
 
-    if ((m_invisibilityMask || target->m_invisibilityMask) && !canDetectInvisibilityOf(target))
+    if (!canDetectInvisibilityOf(target))
         return false;
 
-    if (target->GetVisibility() == VISIBILITY_GROUP_STEALTH && !canDetectStealthOf(target, GetDistance(target)))
+    if (!canDetectStealthOf(target))
         return false;
 
     return true;
@@ -9284,113 +9256,38 @@ int32 Unit::ModifyPower(Powers power, int32 dVal)
     return gain;
 }
 
-bool Unit::isVisibleForOrDetect(Unit const* u, bool detect, bool inVisibleList, bool is3dDistance) const
+bool Unit::isAlwaysVisibleFor(WorldObject const* seer) const
 {
-    if (!u || !IsInMap(u))
-        return false;
-
-    return u->canSeeOrDetect(this, detect, inVisibleList, is3dDistance);
-}
-
-bool Unit::canSeeOrDetect(Unit const* /*u*/, bool /*detect*/, bool /*inVisibleList*/, bool /*is3dDistance*/) const
-{
-    return true;
-}
-
-bool Unit::canDetectInvisibilityOf(Unit const* u) const
-{
-    if (m_invisibilityMask & u->m_invisibilityMask) // same group
+    if (WorldObject::isAlwaysVisibleFor(seer))
         return true;
-    AuraList const& auras = u->GetAurasByType(SPELL_AURA_MOD_STALKED); // Hunter mark
-    for (AuraList::const_iterator iter = auras.begin(); iter != auras.end(); ++iter)
-        if ((*iter)->GetCasterGUID() == GetGUID())
+
+    // Always seen by owner
+    if (uint64 guid = GetCharmerOrOwnerGUID())
+        if (seer->GetGUID() == guid)
             return true;
-
-    if (uint32 mask = (m_detectInvisibilityMask & u->m_invisibilityMask))
-    {
-        for (uint8 i = 0; i < 10; ++i)
-        {
-            if (((1 << i) & mask) == 0)
-                continue;
-
-            // find invisibility level
-            uint32 invLevel = 0;
-            Unit::AuraList const& iAuras = u->GetAurasByType(SPELL_AURA_MOD_INVISIBILITY);
-            for (Unit::AuraList::const_iterator itr = iAuras.begin(); itr != iAuras.end(); ++itr)
-                if (((*itr)->GetModifier()->m_miscvalue) == i && invLevel < (*itr)->GetModifier()->m_amount)
-                    invLevel = (*itr)->GetModifier()->m_amount;
-
-            // find invisibility detect level
-            uint32 detectLevel = 0;
-            if (i == 6 && GetTypeId() == TYPEID_PLAYER)          // special drunk detection case
-            {
-                detectLevel = ToPlayer()->GetDrunkValue();
-            }
-            else
-            {
-                Unit::AuraList const& dAuras = GetAurasByType(SPELL_AURA_MOD_INVISIBILITY_DETECTION);
-                for (Unit::AuraList::const_iterator itr = dAuras.begin(); itr != dAuras.end(); ++itr)
-                    if (((*itr)->GetModifier()->m_miscvalue) == i && detectLevel < (*itr)->GetModifier()->m_amount)
-                        detectLevel = (*itr)->GetModifier()->m_amount;
-            }
-
-            if (invLevel <= detectLevel)
-                return true;
-        }
-    }
 
     return false;
 }
 
-bool Unit::canDetectStealthOf(Unit const* target, float distance) const
+bool Unit::isAlwaysDetectableFor(WorldObject const* seer) const
 {
-    if (!target->m_stealth.GetFlags())
+    if (WorldObject::isAlwaysDetectableFor(seer))
         return true;
 
-    /// Collision
-    float combatReach = 0.25f;
-
-    if (GetTypeId() == TYPEID_UNIT)
-        combatReach = GetCombatReach();
-
-    if (distance < combatReach)
+    if (isStalkedByGUID(seer->GetGUID()))
         return true;
 
-    if (HasAuraTypeWithMiscValue(SPELL_AURA_DETECT_STEALTH, STEALTH_GENERAL))
-        return true;
-
-    // SPELL_AURA_MOD_STALKED
-    if (target->isStalkedByGUID(GetGUID()))
-        return true;
-
-    if (!HasInArc(float(M_PI), target))
-        return false;
-
-    /// Base Stealth Level * 0.3f (Stealth Level modifier)
-    /// Detection distance without level difference is 5.0f
-    float detectionDistance = target->getLevel() * 5.0f + 5.0f;
-
-    detectionDistance += ((int32(getLevel()) - int32(target->getLevel())) * 0.5f); // 0.5f for every level difference
-
-    detectionDistance += (m_stealthDetect.GetValue(STEALTH_GENERAL) * 0.3f);
-    detectionDistance -= (target->m_stealth.GetValue(STEALTH_GENERAL) * 0.3f);
-    detectionDistance = detectionDistance > MAX_PLAYER_STEALTH_DETECT_RANGE ? MAX_PLAYER_STEALTH_DETECT_RANGE : std::max(0.0f, detectionDistance);
-
-    return distance < detectionDistance;
+    return false;
 }
 
-void Unit::SetVisibility(UnitVisibility x, uint32 updateDelay)
+void Unit::SetVisibility(UnitVisibility x)
 {
-    m_Visibility = x;
-
-    if (!updateDelay)
-    {
-        if (m_Visibility == VISIBILITY_GROUP_STEALTH)
-            DestroyForNearbyPlayers(true);
-        UpdateObjectVisibility();
-    }
+    if (x == VISIBILITY_OFF)
+        m_serverSideVisibility.SetValue(SERVERSIDE_VISIBILITY_GM, SEC_GAMEMASTER);
     else
-        SetVisibilityUpdateTimer(updateDelay);
+        m_serverSideVisibility.SetValue(SERVERSIDE_VISIBILITY_GM, SEC_PLAYER);
+
+    UpdateObjectVisibility();
 }
 
 void Unit::UpdateSpeed(UnitMoveType mtype, bool forced, float ratio)
@@ -9872,18 +9769,15 @@ Unit* Creature::SelectVictim()
             return target;
     }
 
-    if (m_invisibilityMask)
+    Unit::AuraList const& iAuras = GetAurasByType(SPELL_AURA_MOD_INVISIBILITY);
+    for (Unit::AuraList::const_iterator itr = iAuras.begin(); itr != iAuras.end(); ++itr)
     {
-        Unit::AuraList const& iAuras = GetAurasByType(SPELL_AURA_MOD_INVISIBILITY);
-        for (Unit::AuraList::const_iterator itr = iAuras.begin(); itr != iAuras.end(); ++itr)
-            if ((*itr)->IsPermanent())
-            {
-                if (m_attackers.size())
-                    return NULL;
-
-                AI()->EnterEvadeMode();
-                break;
-            }
+        if ((*itr)->IsPermanent())
+        {
+            AI()->EnterEvadeMode();
+            break;
+        }
+        
         return NULL;
     }
 
@@ -10162,11 +10056,6 @@ Player* Unit::GetPlayer(WorldObject& object, uint64 guid)
 Creature* Unit::GetCreature(WorldObject& object, uint64 guid)
 {
     return object.GetMap()->GetCreature(guid);
-}
-
-bool Unit::isVisibleForInState(Player const* u, bool inVisibleList) const
-{
-    return isVisibleForOrDetect(u, false, inVisibleList, false);
 }
 
 uint32 Unit::GetCreatureType() const
@@ -12845,7 +12734,7 @@ void Unit::UpdateObjectVisibility(bool forced)
         WorldObject::UpdateObjectVisibility(true);
         // call MoveInLineOfSight for nearby creatures
         Trinity::AIRelocationNotifier notifier(*this);
-        VisitNearbyObject(GetMap()->GetVisibilityDistance(), notifier);
+        VisitNearbyObject(GetMap()->GetVisibilityRange(), notifier);
     }
 }
 

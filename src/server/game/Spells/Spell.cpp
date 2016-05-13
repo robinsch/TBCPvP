@@ -1205,7 +1205,7 @@ SpellMissInfo Spell::DoSpellHitOnUnit(Unit *unit, const uint32 effectMask)
             if (Player* plrHitUnit = unit->ToPlayer())
             {
                 // reset damage to 0 if target has Invisibility or Vanish aura (_only_ vanish, not stealth) and isn't visible for caster
-                bool isVisibleForHit = (plrHitUnit->HasAuraType(SPELL_AURA_MOD_INVISIBILITY) || (plrHitUnit->GetVisibilityUpdateTimer() && plrHitUnit->HasAuraTypeWithFamilyFlags(SPELL_AURA_MOD_STEALTH, SPELLFAMILY_ROGUE, SPELLFAMILYFLAG_ROGUE_VANISH)) || (plrHitUnit->HasAuraTypeWithFamilyFlags(SPELL_AURA_MOD_STEALTH, SPELLFAMILY_ROGUE, SPELLFAMILYFLAG_ROGUE_VANISH) && !plrHitUnit->isVisibleForOrDetect(m_caster, true))) ? false : true;
+                bool isVisibleForHit = ((plrHitUnit->HasAuraType(SPELL_AURA_MOD_INVISIBILITY) || plrHitUnit->HasAuraTypeWithFamilyFlags(SPELL_AURA_MOD_STEALTH, SPELLFAMILY_ROGUE, SPELLFAMILYFLAG_ROGUE_VANISH)) && m_caster->canSeeOrDetect(plrHitUnit)) ? false : true;
 
                 // for delayed spells ignore not visible explicit target
                 if (m_delayMoment && unit == m_targets.getUnitTarget() && !isVisibleForHit)
@@ -1484,7 +1484,7 @@ void Spell::SearchChainTarget(std::list<Unit*> &TagUnitMap, float max_range, uin
             // If you want to add any conditions to exclude a target from TagUnitMap, add condition in this while() loop.
             while (m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MELEE
                 && !m_caster->isInFrontInMap(*next, max_range)
-                || !m_caster->canSeeOrDetect(*next, false)
+                || !m_caster->canSeeOrDetect(*next)
                 || (!(m_spellInfo->AttributesEx2 & SPELL_ATTR_EX2_IGNORE_LOS) && !cur->IsWithinLOSInMap(*next))
                 || ((m_spellInfo->AttributesEx6 & SPELL_ATTR6_CANT_TARGET_CROWD_CONTROLLED) && !(*next)->CanFreeMove()))
             {
@@ -2385,7 +2385,7 @@ void Spell::cast(bool skipCheck)
 
     if (Unit *pTarget = m_targets.getUnitTarget())
     {
-        if (pTarget->isAlive() && (pTarget->HasAuraType(SPELL_AURA_MOD_STEALTH) || pTarget->HasAuraType(SPELL_AURA_MOD_INVISIBILITY)) && !pTarget->IsFriendlyTo(m_caster) && !pTarget->isVisibleForOrDetect(m_caster, true))
+        if (pTarget->isAlive() && (pTarget->HasAuraType(SPELL_AURA_MOD_STEALTH) || pTarget->HasAuraType(SPELL_AURA_MOD_INVISIBILITY)) && !pTarget->IsFriendlyTo(m_caster) && !pTarget->canSeeOrDetect(m_caster))
         {
             SendCastResult(SPELL_FAILED_BAD_TARGETS);
             finish(false);
@@ -5099,7 +5099,7 @@ uint8 Spell::CheckItems()
 
         TypeContainerVisitor<Trinity::GameObjectSearcher<Trinity::GameObjectFocusCheck>, GridTypeMapContainer > object_checker(checker);
         Map& map = *m_caster->GetMap();
-        cell.Visit(p, object_checker, map, *m_caster, map.GetVisibilityDistance());
+        cell.Visit(p, object_checker, map, *m_caster, map.GetVisibilityRange());
 
         if (!ok)
             return (uint8)SPELL_FAILED_REQUIRES_SPELL_FOCUS;

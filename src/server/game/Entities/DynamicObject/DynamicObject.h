@@ -48,7 +48,6 @@ class DynamicObject : public WorldObject, public GridObject<DynamicObject>
         void AddAffected(Unit *unit) { m_affected.insert(unit); }
         void RemoveAffected(Unit *unit) { m_affected.erase(unit); }
         void Delay(int32 delaytime);
-        bool isVisibleForInState(Player const* u, bool inVisibleList) const;
 
         void Say(const char* text, uint32 language, uint64 TargetGuid) { MonsterSay(text, language, TargetGuid); }
         void Yell(const char* text, uint32 language, uint64 TargetGuid) { MonsterYell(text, language, TargetGuid); }

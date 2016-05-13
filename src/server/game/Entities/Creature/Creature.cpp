@@ -1298,59 +1298,15 @@ void Creature::DeleteFromDB()
     WorldDatabase.CommitTransaction();
 }
 
-bool Creature::canSeeOrDetect(Unit const* u, bool detect, bool inVisibleList, bool is3dDistance) const
+bool Creature::isVisibleForInState(WorldObject const* seer) const
 {
-    // not in world
-    if (!IsInWorld() || !u->IsInWorld())
+    if (!Unit::isVisibleForInState(seer))
         return false;
 
-    // all dead creatures/players not visible for any creatures
-    if (!u->isAlive() || !isAlive())
-        return false;
-
-    // Always can see self
-    if (u == this)
+    if (isAlive() || (m_isDeadByDefault && m_deathState == CORPSE) || m_corpseRemoveTime > time(NULL))
         return true;
 
-    if (canNeverSee(u))
-        return false;
-
-    // always seen by owner
-    if (GetGUID() == u->GetCharmerOrOwnerGUID())
-        return true;
-
-    // if owner can detect target return true of creature
-    if (GetOwner() && GetOwner()->GetTypeId() == TYPEID_PLAYER)
-        if (Player* owner = GetOwner()->ToPlayer())
-        {
-            if (owner->canSeeOrDetect(u, detect, inVisibleList, is3dDistance))
-                return true;
-            if (owner->canDetectStealthOf(u, GetDistance(u)))
-                return true;
-        }
-
-    if (u->GetVisibility() == VISIBILITY_OFF) //GM
-        return false;
-
-    // invisible aura
-    if ((m_invisibilityMask || u->m_invisibilityMask) && !canDetectInvisibilityOf(u))
-        return false;
-
-    // unit got in stealth in this moment and must ignore old detected state
-    //if (m_Visibility == VISIBILITY_GROUP_NO_DETECT)
-    //    return false;
-
-    // GM invisibility checks early, invisibility if any detectable, so if not stealth then visible
-    if (u->GetVisibility() == VISIBILITY_GROUP_STEALTH)
-    {
-        //do not know what is the use of this detect
-        if (!detect || !canDetectStealthOf(u, GetDistance(u)))
-            return false;
-    }
-
-    // Now check is target visible with LoS
-    //return u->IsWithinLOS(GetPositionX(), GetPositionY(), GetPositionZ());
-    return true;
+    return false;
 }
 
 bool Creature::canStartAttack(Unit const* who) const
@@ -1662,37 +1618,6 @@ SpellEntry const *Creature::reachWithSpellCure(Unit *pVictim)
     return NULL;
 }
 
-bool Creature::IsVisibleInGridForPlayer(Player const* pl) const
-{
-    // gamemaster in GM mode see all, including ghosts
-    if (pl->isGameMaster())
-        return true;
-
-    // Live player (or with not release body see live creatures or death creatures with corpse disappearing time > 0
-    if (pl->isAlive() || pl->GetDeathTimer() > 0)
-    {
-        if (GetEntry() == VISUAL_WAYPOINT && !pl->isGameMaster())
-            return false;
-        return isAlive() || m_corpseRemoveTime > time(NULL) || m_isDeadByDefault && m_deathState == CORPSE;
-    }
-
-    // Dead player see creatures near own corpse
-    Corpse *corpse = pl->GetCorpse();
-    if (corpse)
-    {
-        // 20 - aggro distance for same level, 25 - max additional distance if player level less that creature level
-        if (corpse->IsWithinDistInMap(this, (20 + 25) * sWorld->getRate(RATE_CREATURE_AGGRO)))
-            return true;
-    }
-
-    // Dead player see Spirit Healer or Spirit Guide
-    if (isSpiritService())
-        return true;
-
-    // and not see any other
-    return false;
-}
-
 void Creature::DoFleeToGetAssistance()
 {
     if (!getVictim())
@@ -1733,7 +1658,6 @@ Unit* Creature::SelectNearestTarget(float dist) const
     cell.SetNoCreate();
 
     Unit *target = NULL;
-
     {
         Trinity::NearestHostileUnitInAttackDistanceCheck u_check(this, dist);
         Trinity::UnitLastSearcher<Trinity::NearestHostileUnitInAttackDistanceCheck> searcher(this, target, u_check);
@@ -1865,7 +1789,7 @@ bool Creature::IsOutOfThreatArea(Unit* pVictim) const
     if (!pVictim->isInAccessiblePlaceFor(this))
         return true;
 
-    if (!pVictim->isVisibleForOrDetect(this, this, false))
+    if (!pVictim->canSeeOrDetect(this))
         return true;
 
     if (sMapStore.LookupEntry(GetMapId())->IsDungeon())

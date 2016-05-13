@@ -502,18 +502,8 @@ enum DamageEffectType
 
 enum UnitVisibility
 {
-    VISIBILITY_OFF                = 0,                      // absolute, not detectable, GM-like, can see all other
-    VISIBILITY_ON                 = 1,
-    VISIBILITY_GROUP_STEALTH      = 2,                      // detect chance, seen and can see group members
-    //VISIBILITY_GROUP_INVISIBILITY = 3,                      // invisibility, can see and can be seen only another invisible unit or invisible detection unit, set only if not stealthed, and in checks not used (mask used instead)
-    //VISIBILITY_GROUP_NO_DETECT    = 4,                      // state just at stealth apply for update Grid state. Don't remove, otherwise stealth spells will break
-    VISIBILITY_RESPAWN            = 5                       // special totally not detectable visibility for force delete object at respawn command
-};
-
-enum UnitUpdateDelay
-{
-    UPDATE_DELAY_VISIBILITY_DEFAULT = 50,
-    UPDATE_DELAY_VISIBILITY_DELAYED = 250
+    VISIBILITY_OFF                = 0,
+    VISIBILITY_ON                 = 1
 };
 
 // Value masks for UNIT_FIELD_FLAGS
@@ -826,33 +816,9 @@ enum ReactiveType
 
 // delay time next attack to prevent client attack animation problems
 #define ATTACK_DISPLAY_DELAY 200
-#define MAX_PLAYER_STEALTH_DETECT_RANGE 45.0f               // max distance for detection targets by player
+#define MAX_PLAYER_STEALTH_DETECT_RANGE 30.0f               // max distance for detection targets by player
 
 struct SpellProcEventEntry;                                 // used only privately
-
-template <class T_VALUES, class T_FLAGS, class FLAG_TYPE, uint8 ARRAY_SIZE>
-class FlaggedValuesArray32
-{
-    public:
-        FlaggedValuesArray32()
-        {
-            memset(&m_values, 0x00, sizeof(T_VALUES) * ARRAY_SIZE);
-            m_flags = 0;
-        }
-
-        T_FLAGS  GetFlags() const { return m_flags; }
-        bool     HasFlag(FLAG_TYPE flag) const { return m_flags & (1 << flag); }
-        void     AddFlag(FLAG_TYPE flag) { m_flags |= (1 << flag); }
-        void     DelFlag(FLAG_TYPE flag) { m_flags &= ~(1 << flag); }
-
-        T_VALUES GetValue(FLAG_TYPE flag) const { return m_values[flag]; }
-        void     SetValue(FLAG_TYPE flag, T_VALUES value) { m_values[flag] = value; }
-        void     AddValue(FLAG_TYPE flag, T_VALUES value) { m_values[flag] += value; }
-
-    private:
-        T_VALUES m_values[ARRAY_SIZE];
-        T_FLAGS m_flags;
-};
 
 class Unit : public WorldObject
 {
@@ -945,7 +911,7 @@ class Unit : public WorldObject
         }
 
         uint32 getLevel() const { return GetUInt32Value(UNIT_FIELD_LEVEL); }
-        virtual uint32 getLevelForTarget(Unit const* /*target*/) const { return getLevel(); }
+        uint8 getLevelForTarget(WorldObject const* /*target*/) const override { return getLevel(); }
         void SetLevel(uint32 lvl);
         uint8 getRace() const { return GetByteValue(UNIT_FIELD_BYTES_0, 0); }
         uint32 getRaceMask() const { return 1 << (getRace()-1); }
@@ -1350,8 +1316,6 @@ class Unit : public WorldObject
         uint32 m_addDmgOnce;
         uint64 m_SummonSlot[MAX_SUMMON_SLOT];
         uint64 m_ObjectSlot[4];
-        uint32 m_detectInvisibilityMask;
-        uint32 m_invisibilityMask;
 
         uint32 m_ShapeShiftFormSpellId;
         ShapeshiftForm m_form;
@@ -1405,28 +1369,13 @@ class Unit : public WorldObject
         void SetFacingToOrientation(float orientation);
 
         // Visibility system
-        UnitVisibility GetVisibility() const { return m_Visibility; }
-        void SetVisibility(UnitVisibility x, uint32 updateDelay = UPDATE_DELAY_VISIBILITY_DEFAULT);
+        UnitVisibility GetVisibility() const { return (m_serverSideVisibility.GetValue(SERVERSIDE_VISIBILITY_GM) > SEC_PLAYER) ? VISIBILITY_OFF : VISIBILITY_ON; }
+        void SetVisibility(UnitVisibility x);
 
-        uint32 GetVisibilityUpdateTimer() { return m_visibilityUpdateTimer; }
-        void SetVisibilityUpdateTimer(uint32 updateTime) { m_visibilityUpdateTimer = updateTime; }
+        bool isValid() const { return WorldObject::isValid(); }
 
-        // common function for visibility checks for player/creatures with detection code
-        virtual bool canSeeOrDetect(Unit const* u, bool detect, bool inVisibleList = false, bool is3dDistance = true) const;
-        bool isVisibleForOrDetect(Unit const* u, bool detect, bool inVisibleList = false, bool is3dDistance = true) const;
-        bool canDetectInvisibilityOf(Unit const* u) const;
-        bool canDetectStealthOf(Unit const* u, float distance) const;
         void UpdateObjectVisibility(bool forced = true);
-
-        FlaggedValuesArray32<int32, uint32, StealthType, TOTAL_STEALTH_TYPES> m_stealth;
-        FlaggedValuesArray32<int32, uint32, StealthType, TOTAL_STEALTH_TYPES> m_stealthDetect;
-
         void SetPhaseMask(uint32 newPhaseMask, bool update) override;// overwrite WorldObject::SetPhaseMask
-
-        // virtual functions for all world objects types
-        bool isVisibleForInState(Player const* u, bool inVisibleList) const;
-        // function for low level grid visibility checks in player/creature cases
-        virtual bool IsVisibleInGridForPlayer(Player const* pl) const = 0;
 
         AuraList      & GetSingleCastAuras()       { return m_scAuras; }
         AuraList const& GetSingleCastAuras() const { return m_scAuras; }
@@ -1692,6 +1641,12 @@ class Unit : public WorldObject
 
         ThreatManager m_ThreatManager;
 
+        bool isAlwaysVisibleFor(WorldObject const* seer) const;
+        bool canSeeAlways(WorldObject const* obj) const { return WorldObject::canSeeAlways(obj); }
+
+        bool isVisibleForInState(WorldObject const* seer) const { return WorldObject::isVisibleForInState(seer); };
+
+        bool isAlwaysDetectableFor(WorldObject const* seer) const;
     private:
         bool IsTriggeredAtSpellProcEvent(Unit *pVictim, Aura* aura, SpellEntry const* procSpell, uint32 procFlag, uint32 procExtra, WeaponAttackType attType, bool isVictim, bool active, SpellProcEventEntry const*& spellProcEvent);
         bool HandleDummyAuraProc(  Unit *pVictim, uint32 damage, Aura* triggredByAura, SpellEntry const *procSpell, uint32 procFlag, uint32 procEx, uint32 cooldown);
@@ -1708,8 +1663,6 @@ class Unit : public WorldObject
         uint32 m_damageTakenCounter[TOTAL_AURAS];
 
         Spell* m_currentSpells[CURRENT_MAX_SPELL];
-
-        UnitVisibility m_Visibility;
 
         Diminishing m_Diminishing;
         // Manage all Units threatening us

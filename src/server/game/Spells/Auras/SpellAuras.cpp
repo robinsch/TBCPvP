@@ -72,8 +72,8 @@ pAuraHandler AuraHandler[TOTAL_AURAS]=
     &Aura::HandleNoImmediateEffect,                         // 15 SPELL_AURA_DAMAGE_SHIELD    implemented in Unit::DoAttackDamage
     &Aura::HandleModStealth,                                // 16 SPELL_AURA_MOD_STEALTH
     &Aura::HandleModStealthDetect,                          // 17 SPELL_AURA_MOD_STEALTH_DETECT
-    &Aura::HandleInvisibility,                              // 18 SPELL_AURA_MOD_INVISIBILITY
-    &Aura::HandleInvisibilityDetect,                        // 19 SPELL_AURA_MOD_INVISIBILITY_DETECTION
+    &Aura::HandleModInvisibility,                           // 18 SPELL_AURA_MOD_INVISIBILITY
+    &Aura::HandleModInvisibilityDetect,                     // 19 SPELL_AURA_MOD_INVISIBILITY_DETECTION
     &Aura::HandleAuraModTotalHealthPercentRegen,            // 20 SPELL_AURA_OBS_MOD_HEALTH
     &Aura::HandleAuraModTotalManaPercentRegen,              // 21 SPELL_AURA_OBS_MOD_MANA
     &Aura::HandleAuraModResistance,                         // 22 SPELL_AURA_MOD_RESISTANCE
@@ -3225,9 +3225,9 @@ void Aura::HandleFeignDeath(bool apply, bool Real)
         */
 
         std::list<Unit*> targets;
-        Trinity::AnyUnfriendlyUnitInObjectRangeCheck u_check(m_target, m_target, m_target->GetMap()->GetVisibilityDistance());
+        Trinity::AnyUnfriendlyUnitInObjectRangeCheck u_check(m_target, m_target, m_target->GetMap()->GetVisibilityRange());
         Trinity::UnitListSearcher<Trinity::AnyUnfriendlyUnitInObjectRangeCheck> searcher(m_target, targets, u_check);
-        m_target->VisitNearbyObject(m_target->GetMap()->GetVisibilityDistance(), searcher);
+        m_target->VisitNearbyObject(m_target->GetMap()->GetVisibilityRange(), searcher);
         for (std::list<Unit*>::iterator iter = targets.begin(); iter != targets.end(); ++iter)
         {
             if (!(*iter)->hasUnitState(UNIT_STAT_CASTING))
@@ -3340,16 +3340,6 @@ void Aura::HandleModStealth(bool apply, bool Real)
             if (m_target->GetTypeId() == TYPEID_PLAYER)
                 m_target->SetByteFlag(PLAYER_FIELD_BYTES2, 3, PLAYER_FIELD_BYTE2_STEALTH);
 
-            // apply only if not in GM invisibility (and overwrite invisibility state)
-            if (m_target->GetVisibility() != VISIBILITY_OFF)
-            {
-                // Don't add delayed invisiblity update for nightelf racial (Shadowmelt)
-                if (m_spellProto->Id == 20580)
-                    m_target->SetVisibility(VISIBILITY_GROUP_STEALTH);
-                else
-                    m_target->SetVisibility(VISIBILITY_GROUP_STEALTH, UPDATE_DELAY_VISIBILITY_DELAYED);
-            }
-
             // for RACE_NIGHTELF stealth
             if (m_target->GetTypeId() == TYPEID_PLAYER && GetId() == 20580)
                 m_target->CastSpell(m_target, 21009, true, NULL, this);
@@ -3367,15 +3357,13 @@ void Aura::HandleModStealth(bool apply, bool Real)
                 m_target->RemoveAurasDueToSpell(21009);
 
             // if last SPELL_AURA_MOD_STEALTH and no GM invisibility
-            if (!m_target->HasAuraType(SPELL_AURA_MOD_STEALTH) && m_target->GetVisibility() != VISIBILITY_OFF)
+            if (!m_target->HasAuraType(SPELL_AURA_MOD_STEALTH))
             {
                 m_target->m_stealth.DelFlag(type);
 
                 m_target->RemoveStandFlags(UNIT_STAND_FLAGS_CREEP);
                 if (m_target->GetTypeId() == TYPEID_PLAYER)
                     m_target->RemoveByteFlag(PLAYER_FIELD_BYTES2, 3, PLAYER_FIELD_BYTE2_STEALTH);
-
-                m_target->SetVisibility(VISIBILITY_ON, UPDATE_DELAY_VISIBILITY_DELAYED);
             }
         }
     }
@@ -3396,14 +3384,16 @@ void Aura::HandleModStealth(bool apply, bool Real)
             break;
         }
     }
+
+    m_target->UpdateObjectVisibility();
 }
 
-void Aura::HandleInvisibility(bool apply, bool Real)
+void Aura::HandleModInvisibility(bool apply, bool Real)
 {
+    InvisibilityType type = InvisibilityType(m_spellProto->EffectMiscValue[m_effIndex]);
+
     if (apply)
     {
-        m_target->m_invisibilityMask |= (1 << m_modifier.m_miscvalue);
-
         m_target->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_UNATTACKABLE);
 
         // apply glow vision
@@ -3413,49 +3403,46 @@ void Aura::HandleInvisibility(bool apply, bool Real)
         // apply only if not in GM invisibility and not stealth
         if (m_target->GetVisibility() == VISIBILITY_ON)
             m_target->SetVisibility(VISIBILITY_ON);
+
+        m_target->m_invisibility.AddFlag(type);
+        m_target->m_invisibility.AddValue(type, m_modifier.m_amount);
     }
     else
     {
-        // recalculate value at modifier remove (current aura already removed)
-        m_target->m_invisibilityMask = 0;
-        Unit::AuraList const& auras = m_target->GetAurasByType(SPELL_AURA_MOD_INVISIBILITY);
-        for (Unit::AuraList::const_iterator itr = auras.begin(); itr != auras.end(); ++itr)
-            m_target->m_invisibilityMask |= (1 << m_modifier.m_miscvalue);
-
-        // only at real aura remove and if not have different invisibility auras.
-        if (Real && m_target->m_invisibilityMask == 0)
+        if (!m_target->HasAuraType(SPELL_AURA_MOD_INVISIBILITY))
         {
+            // if not have different invisibility auras.
             // remove glow vision
             if (m_target->GetTypeId() == TYPEID_PLAYER)
-                m_target->RemoveFlag(PLAYER_FIELD_BYTES2, PLAYER_FIELD_BYTE2_INVISIBILITY_GLOW);
+                m_target->RemoveFlag(PLAYER_FIELD_BYTES2,PLAYER_FIELD_BYTE2_INVISIBILITY_GLOW);
 
-            // apply only if not in GM invisibility & not stealthed while invisible
-            if (m_target->GetVisibility() == VISIBILITY_ON)
-            {
-                // if have stealth aura then already have stealth visibility
-                if (!m_target->HasAuraType(SPELL_AURA_MOD_STEALTH))
-                    m_target->SetVisibility(VISIBILITY_ON);
-            }
+            m_target->m_invisibility.DelFlag(type);
         }
+
+        m_target->m_invisibility.AddValue(type, -m_modifier.m_amount);
     }
+
+    m_target->UpdateObjectVisibility();
 }
 
-void Aura::HandleInvisibilityDetect(bool apply, bool Real)
+void Aura::HandleModInvisibilityDetect(bool apply, bool Real)
 {
+    InvisibilityType type = InvisibilityType(m_spellProto->EffectMiscValue[m_effIndex]);
+
     if (apply)
     {
-        m_target->m_detectInvisibilityMask |= (1 << m_modifier.m_miscvalue);
+        m_target->m_invisibilityDetect.AddFlag(type);
+        m_target->m_invisibilityDetect.AddValue(type, m_modifier.m_amount);
     }
     else
     {
-        // recalculate value at modifier remove (current aura already removed)
-        m_target->m_detectInvisibilityMask = 0;
-        Unit::AuraList const& auras = m_target->GetAurasByType(SPELL_AURA_MOD_INVISIBILITY_DETECTION);
-        for (Unit::AuraList::const_iterator itr = auras.begin(); itr != auras.end(); ++itr)
-            m_target->m_detectInvisibilityMask |= (1 << m_modifier.m_miscvalue);
+        if (!m_target->HasAuraType(SPELL_AURA_MOD_INVISIBILITY_DETECT))
+            m_target->m_invisibilityDetect.DelFlag(type);
+
+        m_target->m_invisibilityDetect.AddValue(type, -m_modifier.m_amount);
     }
-    if (Real && m_target->GetTypeId() == TYPEID_PLAYER)
-        m_target->UpdateObjectVisibility();
+
+    m_target->UpdateObjectVisibility();
 }
 
 void Aura::HandleAuraModRoot(bool apply, bool Real)
@@ -3993,6 +3980,8 @@ void Aura::HandleAuraModStalked(bool apply, bool Real)
         m_target->setStalkerGUID(0);
         m_target->RemoveFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_TRACK_UNIT);
     }
+
+    m_target->UpdateObjectVisibility();
 }
 
 /*********************************************************/
@@ -5346,10 +5335,14 @@ void Aura::HandleAuraGhost(bool apply, bool /*Real*/)
     if (apply)
     {
         m_target->SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST);
+        m_target->m_serverSideVisibility.SetValue(SERVERSIDE_VISIBILITY_GHOST, GHOST_VISIBILITY_GHOST);
+        m_target->m_serverSideVisibilityDetect.SetValue(SERVERSIDE_VISIBILITY_GHOST, GHOST_VISIBILITY_GHOST);
     }
     else
     {
         m_target->RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST);
+        m_target->m_serverSideVisibility.SetValue(SERVERSIDE_VISIBILITY_GHOST, GHOST_VISIBILITY_ALIVE);
+        m_target->m_serverSideVisibilityDetect.SetValue(SERVERSIDE_VISIBILITY_GHOST, GHOST_VISIBILITY_ALIVE);
     }
 }
 

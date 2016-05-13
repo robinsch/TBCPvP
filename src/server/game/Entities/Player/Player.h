@@ -1645,7 +1645,7 @@ class Player : public Unit, public GridObject<Player>
         void DuelComplete(DuelCompleteType type);
         void SendDuelCountdown(uint32 counter);
 
-        bool IsGroupVisibleFor(Player* p) const;
+        bool IsGroupVisibleFor(Player const* p) const;
         bool IsInSameGroupWith(Player const* p) const;
         bool IsInSameRaidWith(Player const* p) const { return p == this || (GetGroup() != NULL && GetGroup() == p->GetGroup()); }
         void UninviteFromGroup();
@@ -1768,8 +1768,9 @@ class Player : public Unit, public GridObject<Player>
 
         void UpdateUnderwaterState(Map * m, float x, float y, float z);
 
-        void SendMessageToSet(WorldPacket *data, bool self);// overwrite Object::SendMessageToSet
-        void SendMessageToSetInRange(WorldPacket *data, float fist, bool self);// overwrite Object::SendMessageToSetInRange
+        void SendMessageToSet(WorldPacket *data, bool self) { SendMessageToSetInRange(data, GetVisibilityRange(), self); };
+        void SendMessageToSet(WorldPacket *data, Player const* skipped_rcvr) override;
+        void SendMessageToSetInRange(WorldPacket *data, float fist, bool self) override;
         void SendMessageToSetInRange(WorldPacket *data, float dist, bool self, bool own_team_only);
 
         Corpse *GetCorpse() const;
@@ -2175,7 +2176,6 @@ class Player : public Unit, public GridObject<Player>
 
         bool HaveAtClient(WorldObject const* u) const { return u == this || m_clientGUIDs.find(u->GetGUID()) != m_clientGUIDs.end(); }
 
-        bool canSeeOrDetect(Unit const* u, bool detect, bool inVisibleList = false, bool is3dDistance = true) const;
         bool IsVisibleInGridForPlayer(Player const* pl) const;
         bool IsVisibleGloballyFor(Player* pl) const;
 
@@ -2186,9 +2186,6 @@ class Player : public Unit, public GridObject<Player>
 
         template<class T>
             void UpdateVisibilityOf(T* target, UpdateData& data, std::set<Unit*>& visibleNow);
-
-        // Stealth detection system
-        void HandleStealthedUnitsDetection();
 
         uint8 m_forced_speed_changes[MAX_MOVE_TYPE];
 
@@ -2401,7 +2398,6 @@ class Player : public Unit, public GridObject<Player>
         uint64 m_comboTarget;
         int8 m_comboPoints;
 
-        uint32 m_visibilityUpdateTimer;
         uint32 m_combatImmuneTimer;
 
         QuestStatusMap mQuestStatus;
