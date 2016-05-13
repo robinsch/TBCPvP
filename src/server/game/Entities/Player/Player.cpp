@@ -6411,7 +6411,7 @@ void Player::SendMessageToSet(WorldPacket *data, Player const* skipped_rcvr)
 {
     // we use World::GetMaxVisibleDistance() because i cannot see why not use a distance
     // update: replaced by GetMap()->GetVisibilityDistance()
-    Trinity::MessageDistDeliverer notifier(this, data, GetMap()->GetVisibilityRange());
+    Trinity::MessageDistDeliverer notifier(this, data, GetMap()->GetVisibilityRange(), false, GetPhaseMask(), skipped_rcvr);
     VisitNearbyWorldObject(GetMap()->GetVisibilityRange(), notifier);
 }
 
@@ -19932,7 +19932,7 @@ void Player::UpdateVisibilityOf(WorldObject* target)
 {
     if (HaveAtClient(target))
     {
-        if (!canSeeOrDetect(target, true))
+        if (!canSeeOrDetect(target, false, true))
         {
             if (target->GetTypeId() == TYPEID_UNIT)
                 BeforeVisibilityDestroy<Creature>(target->ToCreature(), this);
@@ -19948,7 +19948,7 @@ void Player::UpdateVisibilityOf(WorldObject* target)
     }
     else
     {
-        if (canSeeOrDetect(target, false))
+        if (canSeeOrDetect(target, false, true))
         {
             target->SendUpdateToPlayer(this);
             if (target->GetTypeId() != TYPEID_GAMEOBJECT||!((GameObject*)target)->IsTransport())
