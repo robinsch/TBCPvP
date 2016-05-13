@@ -22434,3 +22434,15 @@ void Player::UpdateFallInformationIfNeed(MovementInfo const& minfo, uint16 opcod
     if (m_lastFallTime >= minfo.fallTime || m_lastFallZ <= minfo.pos.GetPositionZ() || opcode == MSG_MOVE_FALL_LAND)
         SetFallInformation(minfo.fallTime, minfo.pos.GetPositionZ());
 }
+
+bool Player::isAlwaysDetectableFor(WorldObject const* seer) const
+{ 
+    if (Unit::isAlwaysDetectableFor(seer))
+        return true;
+
+    if (const Player* seerPlayer = seer->ToPlayer())
+        if (IsGroupVisibleFor(seerPlayer))
+            return !(seerPlayer->duel && seerPlayer->duel->startTime != 0 && seerPlayer->duel->opponent == this);
+
+    return false;
+}

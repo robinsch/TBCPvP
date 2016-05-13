@@ -2184,6 +2184,8 @@ class Player : public Unit, public GridObject<Player>
         void UpdateVisibilityForPlayer();
         void UpdateVisibilityOf(WorldObject* target);
 
+        bool isAlwaysDetectableFor(WorldObject const* seer) const;
+
         template<class T>
             void UpdateVisibilityOf(T* target, UpdateData& data, std::set<Unit*>& visibleNow);
 
