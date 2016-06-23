@@ -1044,7 +1044,10 @@ void Spell::DoAllEffectOnTarget(TargetInfo *target)
         {
             // Don't set new target for channeled spells, they should just cancel when reflected
             if (!IsChanneledSpell(m_spellInfo))
+            {
                 spellHitTarget = m_caster;
+                caster = unitTarget;
+            }
         }
     }
 
