@@ -6136,9 +6136,8 @@ void Aura::PeriodicTick()
             if (damageInfo.damage)
                 procVictim|=PROC_FLAG_TAKEN_ANY_DAMAGE;
 
-            pCaster->ProcDamageAndSpell(damageInfo.target, procAttacker, procVictim, procEx, damageInfo.damage, BASE_ATTACK, spellProto);
-
             pCaster->DealSpellDamage(&damageInfo, true);
+            pCaster->ProcDamageAndSpell(damageInfo.target, procAttacker, procVictim, procEx, damageInfo.damage, BASE_ATTACK, spellProto);
             break;
         }
         // Here tick dummy auras

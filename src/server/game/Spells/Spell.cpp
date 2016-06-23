@@ -1108,6 +1108,8 @@ void Spell::DoAllEffectOnTarget(TargetInfo *target)
         procEx = createProcExtendMask(&damageInfo, missInfo);
         procVictim |= PROC_FLAG_TAKEN_ANY_DAMAGE;
 
+        caster->DealSpellDamage(&damageInfo, true);
+
         // Do triggers for unit (reflect triggers passed on hit phase for correct drop charge)
         if (missInfo != SPELL_MISS_REFLECT)
         {
@@ -1115,8 +1117,6 @@ void Spell::DoAllEffectOnTarget(TargetInfo *target)
             if (caster->GetTypeId() == TYPEID_PLAYER)
                 caster->ToPlayer()->CastItemCombatSpell(unitTarget, m_attackType, procVictim, procEx, m_spellInfo);
         }
-
-        caster->DealSpellDamage(&damageInfo, true);
 
         // Judgement of Blood
         if (m_spellInfo->SpellFamilyName == SPELLFAMILY_PALADIN && m_spellInfo->SpellFamilyFlags & 0x0000000800000000LL && m_spellInfo->SpellIconID == 153)
