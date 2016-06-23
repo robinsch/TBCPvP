@@ -549,4 +549,3 @@ void PetAI::HandleTaunt(Unit* taunter, bool apply)
         me->ToPet()->SetOriginalTarget(nullptr);
     }
 }
-

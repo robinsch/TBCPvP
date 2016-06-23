@@ -3535,7 +3535,12 @@ void Spell::EffectDispel(uint32 i)
     std::list < std::pair<uint32, uint64> > successList;
     std::list <uint32> failList;
 
-    unitTarget->GetDispellableAuraList(m_caster, dispelMask, dispelList);
+    bool checkPositiveAuraWhenFriendly = true;
+    for (std::list<TargetInfo>::iterator ihit = m_UniqueTargetInfo.begin(); ihit != m_UniqueTargetInfo.end(); ++ihit)
+        if (ihit->missCondition == SPELL_MISS_REFLECT)
+            checkPositiveAuraWhenFriendly = false;
+
+    unitTarget->GetDispellableAuraList(m_caster, dispelMask, dispelList, checkPositiveAuraWhenFriendly);
     if (dispelList.empty())
         return;
 

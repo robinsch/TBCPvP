@@ -755,7 +755,7 @@ bool Unit::HasAuraTypeWithMiscValue(AuraType auraType, int32 miscValue) const
     return false;
 }
 
-void Unit::GetDispellableAuraList(Unit* caster, uint32 dispelMask, dispel_list& dispelList)
+void Unit::GetDispellableAuraList(Unit* caster, uint32 dispelMask, dispel_list& dispelList, bool checkPositiveWhenFriendly)
 {
     Unit::AuraMap const& auras = GetAuras();
     for (Unit::AuraMap::const_iterator itr = auras.begin(); itr != auras.end(); ++itr)
@@ -772,7 +772,7 @@ void Unit::GetDispellableAuraList(Unit* caster, uint32 dispelMask, dispel_list& 
             {
                 // do not remove positive auras if friendly target
                 //               negative auras if non-friendly target
-                if (aura->IsPositive() == IsFriendlyTo(caster))
+                if (checkPositiveWhenFriendly && aura->IsPositive() == IsFriendlyTo(caster))
                 {
                     // Mind control works vise vera, allow to dispel negative debuffs if !friendly
                     if (!(aura->GetSpellProto()->SpellFamilyName == SPELLFAMILY_PRIEST &&
