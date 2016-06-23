@@ -3326,6 +3326,8 @@ void Aura::HandleModStealth(bool apply, bool Real)
             // for RACE_NIGHTELF stealth
             if (m_target->GetTypeId() == TYPEID_PLAYER && GetId() == 20580)
                 m_target->CastSpell(m_target, 21009, true, NULL, this);
+
+            m_target->SetForcedVisibilityTimer(200);
         }
     }
     else
@@ -3347,6 +3349,8 @@ void Aura::HandleModStealth(bool apply, bool Real)
                 m_target->RemoveStandFlags(UNIT_STAND_FLAGS_CREEP);
                 if (m_target->GetTypeId() == TYPEID_PLAYER)
                     m_target->RemoveByteFlag(PLAYER_FIELD_BYTES2, 3, PLAYER_FIELD_BYTE2_STEALTH);
+
+                m_target->SetForcedVisibilityTimer(0);
             }
         }
     }

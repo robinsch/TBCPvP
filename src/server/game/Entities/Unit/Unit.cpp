@@ -368,6 +368,17 @@ void Unit::Update(uint32 p_time)
         }
     }
 
+    // update forced visibility
+    if (m_forcedVisibilityTimer > 0)
+    {
+        if (m_forcedVisibilityTimer <= p_time)
+        {
+            m_forcedVisibilityTimer = 0;
+            UpdateObjectVisibility();
+        }
+        else
+            m_forcedVisibilityTimer -= p_time;
+    }
 
     // not implemented before 3.0.2
     if (uint32 base_att = getAttackTimer(BASE_ATTACK))
@@ -9265,6 +9276,9 @@ bool Unit::isAlwaysVisibleFor(WorldObject const* seer) const
     if (uint64 guid = GetCharmerOrOwnerGUID())
         if (seer->GetGUID() == guid)
             return true;
+
+    if (IsVisibilityForced())
+        return true;
 
     return false;
 }

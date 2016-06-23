@@ -1587,6 +1587,10 @@ class Unit : public WorldObject
 
         uint32 GetDamageTakenWithActiveAuraType(AuraType auraType) const { return m_damageTakenCounter[auraType]; }
         void SetDamageTakenWithActiveAuraType(AuraType auraType, uint32 damageAmount) { m_damageTakenCounter[auraType] = damageAmount; }
+
+        uint32 GetForceVisibilityTimer() const { return m_forcedVisibilityTimer; }
+        bool IsVisibilityForced() const { return m_forcedVisibilityTimer > 0; }
+        void SetForcedVisibilityTimer(uint32 time) { m_forcedVisibilityTimer = time; }
     protected:
         explicit Unit ();
 
@@ -1683,6 +1687,8 @@ class Unit : public WorldObject
         uint64 m_misdirectionTargetGUID;
 
         uint32 m_procDeep;
+
+        uint32 m_forcedVisibilityTimer;
 };
 
 namespace Trinity
