@@ -617,45 +617,50 @@ void Pet::Update(uint32 diff)
 
                         // okay: if positive / negative then we should return to our last target (req: target is alive and still in map?) 
                         // if we dont have a last target return to owner
-                        if (IsPositiveSpell(m_queuedSpellEntry))
+                        if (m_originalTarget && m_originalTarget->isAlive())
                         {
-                            if (m_originalTarget && m_originalTarget->isAlive())
-                            {
-                                GetCharmInfo()->SetIsCommandAttack(true);
-                                GetCharmInfo()->SetIsAtStay(false);
-                                GetCharmInfo()->SetIsFollowing(false);
-                                GetCharmInfo()->SetIsReturning(false);
+                            GetCharmInfo()->SetIsCommandAttack(true);
+                            GetCharmInfo()->SetIsAtStay(false);
+                            GetCharmInfo()->SetIsFollowing(false);
+                            GetCharmInfo()->SetIsReturning(false);
 
-                                if (ToCreature()->IsAIEnabled)
-                                    ToCreature()->AI()->AttackStart(m_originalTarget);
-                            }
-                            else // no target or target is dead - return to owner
+                            if (ToCreature()->IsAIEnabled)
+                                ToCreature()->AI()->AttackStart(m_originalTarget);
+                        }
+                        else // no target or target is dead - return to owner
+                        {
+                            if (GetCharmInfo()->HasCommandState(COMMAND_STAY))
                             {
-                                if (GetCharmInfo()->HasCommandState(COMMAND_STAY))
+                                if (!GetCharmInfo()->IsAtStay() && !GetCharmInfo()->IsReturning())
                                 {
-                                    if (!GetCharmInfo()->IsAtStay() && !GetCharmInfo()->IsReturning())
+                                    // Return to previous position where stay was clicked
+                                    if (!GetCharmInfo()->IsCommandAttack())
                                     {
-                                        // Return to previous position where stay was clicked
+                                        AttackStop();
+                                        InterruptNonMeleeSpells(false);
+
+                                        float x, y, z;
+
+                                        GetCharmInfo()->GetStayPosition(x, y, z);
+                                        GetCharmInfo()->SetIsReturning(true);
+                                        GetMotionMaster()->Clear();
+                                        GetMotionMaster()->MovePoint(GetGUIDLow(), x, y, z);
+                                    }
+                                }
+                                else
+                                {
+                                    if (!GetCharmInfo()->IsFollowing() && !GetCharmInfo()->IsReturning())
+                                    {
                                         if (!GetCharmInfo()->IsCommandAttack())
                                         {
-                                            float x, y, z;
+                                            AttackStop();
+                                            InterruptNonMeleeSpells(false);
+                                            GetMotionMaster()->MoveFollow(GetCharmerOrOwner(), PET_FOLLOW_DIST, PET_FOLLOW_ANGLE);
 
-                                            GetCharmInfo()->GetStayPosition(x, y, z);
+                                            GetCharmInfo()->SetIsCommandAttack(false);
+                                            GetCharmInfo()->SetIsAtStay(false);
                                             GetCharmInfo()->SetIsReturning(true);
-                                            GetMotionMaster()->Clear();
-                                            GetMotionMaster()->MovePoint(GetGUIDLow(), x, y, z);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        if (!GetCharmInfo()->IsFollowing() && !GetCharmInfo()->IsReturning())
-                                        {
-                                            if (!GetCharmInfo()->IsCommandAttack())
-                                            {
-                                                GetCharmInfo()->SetIsReturning(true);
-                                                GetMotionMaster()->Clear();
-                                                GetMotionMaster()->MoveFollow(GetCharmerOrOwner(), PET_FOLLOW_DIST, GetFollowAngle());
-                                            }
+                                            GetCharmInfo()->SetIsFollowing(false);
                                         }
                                     }
                                 }

@@ -364,13 +364,15 @@ void WorldSession::HandlePetActionHelper(Unit *pet, uint64 guid1, uint16 spellid
                         if (pet->ToCreature()->IsAIEnabled)
                         {
                             /// @todo: make this one function 
-                            pet->GetCharmInfo()->SetIsCommandAttack(false);
                             pet->GetCharmInfo()->SetIsAtStay(false);
                             pet->GetCharmInfo()->SetIsFollowing(false);
                             pet->GetCharmInfo()->SetIsReturning(false);
 
                             if (!friendlyTarget)
+                            {
+                                pet->GetCharmInfo()->SetIsCommandAttack(true);
                                 pet->Attack(unit_target, true);
+                            }
                             else
                                 pet->GetMotionMaster()->MoveFollow(unit_target, PET_FOLLOW_DIST, PET_FOLLOW_ANGLE);
 
