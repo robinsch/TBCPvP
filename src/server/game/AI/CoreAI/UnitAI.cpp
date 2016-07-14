@@ -46,7 +46,7 @@ void UnitAI::DoMeleeAttackIfReady()
     if (me->isAttackReady())
     {
         //If we are within range melee the target
-        if (me->IsWithinMeleeRange(me->getVictim(), 1.30f)) //Grace range for AI attackers to allow consistent attack behaviour
+        if (me->IsWithinMeleeRange(me->getVictim()))
         {
             me->AttackerStateUpdate(me->getVictim());
             me->resetAttackTimer();

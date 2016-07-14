@@ -1622,7 +1622,7 @@ void Player::Update(uint32 p_time)
             // TODO add weapon, skill check
             if (isAttackReady(BASE_ATTACK))
             {
-                if (!IsWithinMeleeRange(pVictim, 1.0f)) // actual auto-attack range calc:
+                if (!IsWithinMeleeRange(pVictim))
                 {
                     setAttackTimer(BASE_ATTACK, (100 + GetAttackTime(BASE_ATTACK)/12));
                     if (m_swingErrorMsg != 1)               // send single time (client auto repeat)
@@ -1659,7 +1659,7 @@ void Player::Update(uint32 p_time)
 
             if (haveOffhandWeapon() && isAttackReady(OFF_ATTACK))
             {
-                if (!IsWithinMeleeRange(pVictim, 0.50f))
+                if (!IsWithinMeleeRange(pVictim))
                     setAttackTimer(OFF_ATTACK, (100 + GetAttackTime(OFF_ATTACK)/12));
                 else if (!HasInArc(2*M_PI/3, pVictim))
                     setAttackTimer(OFF_ATTACK, 100);
