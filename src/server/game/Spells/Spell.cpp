@@ -4948,13 +4948,8 @@ uint8 Spell::CheckRange(bool strict, bool initialCheck)
         if (Item* ranged = m_caster->ToPlayer()->GetWeaponForAttack(RANGED_ATTACK, true))
             maxRange *= ranged->GetProto()->RangedModRange * 0.01f;
 
-    SpellRangeEntry const* srange = sSpellRangeStore.LookupEntry(m_spellInfo->rangeIndex);
-    float max_range = GetSpellMaxRange(srange); // + range_mod;
-    float min_range = GetSpellMinRange(srange);
-    uint32 range_type = GetSpellRangeType(srange);
-
     if (Player* modOwner = m_caster->GetSpellModOwner())
-        modOwner->ApplySpellMod(m_spellInfo->Id, SPELLMOD_RANGE, max_range, this);
+        modOwner->ApplySpellMod(m_spellInfo->Id, SPELLMOD_RANGE, maxRange, this);
 
     maxRange += rangeMod;
 
