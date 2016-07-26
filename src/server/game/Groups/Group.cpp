@@ -302,12 +302,28 @@ uint32 Group::RemoveMember(const uint64 &guid, const uint8 &method)
 {
     BroadcastGroupUpdate();
 
+    Player* player = sObjectMgr->GetPlayer(guid);
+    if (player)
+    {
+        for (GroupReference* itr = GetFirstMember(); itr != nullptr; itr = itr->next())
+        {
+            if (Player* groupMember = itr->getSource())
+            {
+                if (groupMember->GetGUID() == guid)
+                    continue;
+
+                groupMember->RemoveAllGroupBuffsFromCaster(guid);
+                player->RemoveAllGroupBuffsFromCaster(groupMember->GetGUID());
+            }
+        }
+    }
+
     // remove member and change leader (if need) only if strong more 2 members _before_ member remove
     if (GetMembersCount() > (isBGGroup() ? 1 : 2))           // in BG group case allow 1 members group
     {
         bool leaderChanged = _removeMember(guid);
 
-        if (Player* player = sObjectMgr->GetPlayer(guid))
+        if (player)
         {
             WorldPacket data;
 

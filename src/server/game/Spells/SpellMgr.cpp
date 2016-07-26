@@ -1070,6 +1070,24 @@ bool IsPositiveSpell(uint32 spellId)
     return true;
 }
 
+bool IsGroupBuff(SpellEntry const* spellInfo)
+{
+    for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+    {
+        switch (spellInfo->EffectImplicitTargetA[i])
+        {
+            case TARGET_UNIT_PARTY_TARGET:
+            case TARGET_UNIT_TARGET_RAID:
+            case TARGET_UNIT_CLASS_TARGET:
+                return true;
+            default:
+                break;
+        }
+    }
+
+    return false;
+}
+
 bool IsSingleTargetSpell(SpellEntry const *spellInfo)
 {
     // all other single target spells have if it has AttributesEx5

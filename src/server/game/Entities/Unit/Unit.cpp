@@ -4352,6 +4352,18 @@ void Unit::RemoveNotOwnSingleTargetAuras()
     }
 }
 
+void Unit::RemoveAllGroupBuffsFromCaster(uint64 casterGUID)
+{
+    for (AuraMap::iterator iter = m_Auras.begin(); iter != m_Auras.end();)
+    {
+        SpellEntry const *spell = iter->second->GetSpellProto();
+        if (IsGroupBuff(spell))
+            RemoveAura(iter);
+        else
+            ++iter;
+    }
+}
+
 void Unit::RemoveAura(AuraMap::iterator &i, AuraRemoveMode mode)
 {
     Aura* Aur = i->second;

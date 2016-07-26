@@ -1248,6 +1248,7 @@ class Unit : public WorldObject
         void RemoveAurasDueToSpellByCancel(uint32 spellId);
         void RemoveAurasAtChanneledTarget(SpellEntry const* spellInfo, Unit * caster);
         void RemoveNotOwnSingleTargetAuras();
+        void RemoveAllGroupBuffsFromCaster(uint64 casterGUID);
 
         void RemoveSpellsCausingAura(AuraType auraType, uint32 except = 0);
         void RemoveAuraTypeByCaster(AuraType auraType, uint64 casterGUID);
