@@ -7310,6 +7310,7 @@ bool Unit::Attack(Unit *victim, bool meleeAttack)
         ((WorldObject*)this)->SendMessageToSet(&data, true);
 
         ToCreature()->CallAssistance();
+        SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_ONESHOT_NONE);
     }
 
     // delay offhand weapon attack to next attack time
