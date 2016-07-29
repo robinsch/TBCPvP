@@ -3735,7 +3735,11 @@ bool Unit::AddAura(Aura *Aur)
     {
         SpellMissInfo auraMissInfo = Aur->GetCaster()->MagicAuraHitResult(Aur->GetTarget(), Aur->GetSpellProto());
         if (auraMissInfo != SPELL_MISS_NONE)
+        {
             Aur->GetCaster()->SendSpellMiss(Aur->GetTarget(), Aur->GetId(), auraMissInfo);
+            delete Aur;
+            return false;
+        }
     }
 
     // update single target auras list (before aura add to aura list, to prevent unexpected remove recently added aura)
