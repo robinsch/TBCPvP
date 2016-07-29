@@ -11595,8 +11595,8 @@ void Unit::UpdateReactives(uint32 p_time)
 Unit* Unit::SelectNearbyTarget(float dist) const
 {
     std::list<Unit *> targets;
-    Trinity::AnyUnfriendlyUnitInObjectRangeCheck u_check(this, this, dist);
-    Trinity::UnitListSearcher<Trinity::AnyUnfriendlyUnitInObjectRangeCheck> searcher(this, targets, u_check);
+    Trinity::AnyUnfriendlyNoTotemUnitInObjectRangeCheck u_check(this, this, dist);
+    Trinity::UnitListSearcher<Trinity::AnyUnfriendlyNoTotemUnitInObjectRangeCheck> searcher(this, targets, u_check);
     VisitNearbyObject(dist, searcher);
 
     // remove current target
