@@ -11626,13 +11626,10 @@ Item* Player::EquipItem(uint16 pos, Item *pItem, bool update)
                 SpellEntry const* spellProto = sSpellStore.LookupEntry(cooldownSpell);
 
                 // Swapping weapons resets the melee swing timer
-                uint32 base_attack = GetAttackTime(BASE_ATTACK);
-                setAttackTimer(BASE_ATTACK, (3*GetAttackTime(BASE_ATTACK)/5) + 100);
+                
+                resetAttackTimer(BASE_ATTACK);
                 if (haveOffhandWeapon())
-                {
-                    uint32 off_attack = GetAttackTime(OFF_ATTACK);
-                    setAttackTimer(OFF_ATTACK, (3*GetAttackTime(OFF_ATTACK))/4 + 150);
-                }
+                    resetAttackTimer(OFF_ATTACK);
 
                 if (!spellProto)
                     sLog->outError("Weapon switch cooldown spell %u couldn't be found in Spell.dbc", cooldownSpell);
