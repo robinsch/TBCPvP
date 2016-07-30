@@ -232,6 +232,7 @@ bool Group::AddLeaderInvite(Player* player)
     if (!AddInvite(player))
         return false;
 
+    _updateLeaderFlag(true);
     m_leaderGuid = player->GetGUID();
     m_leaderName = player->GetName();
     _updateLeaderFlag();
