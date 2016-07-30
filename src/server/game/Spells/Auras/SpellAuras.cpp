@@ -5867,7 +5867,10 @@ void Aura::PeriodicTick()
             uint32 heal = pCaster->SpellHealingBonusTaken(pCaster, spellProto, int32(new_damage * multiplier), DOT);
 
             int32 gain = pCaster->ModifyHealth(heal);
-            pCaster->getHostileRefManager().threatAssist(pCaster, gain * 0.5f, spellProto);
+
+            // Health Leech effects do not generate healing aggro
+            if (m_modifier.m_auraname != SPELL_AURA_PERIODIC_LEECH)
+                pCaster->getHostileRefManager().threatAssist(pCaster, gain * 0.5f, spellProto);
 
             pCaster->SendHealSpellLog(pCaster, spellProto->Id, heal);
             break;
@@ -6011,10 +6014,7 @@ void Aura::PeriodicTick()
             int32 gain_amount = int32(drain_amount * gain_multiplier);
 
             if (gain_amount)
-            {
                 int32 gain = pCaster->ModifyPower(power, gain_amount);
-                target->AddThreat(pCaster, float(gain) * 0.5f, GetSpellSchoolMask(spellProto), spellProto);
-            }
 
             // Mark of Kaz'rogal
             if (GetId() == 31447 && target->GetPower(power) == 0)
