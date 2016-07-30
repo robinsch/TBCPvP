@@ -1271,7 +1271,7 @@ class Player : public Unit, public GridObject<Player>
         void AddQuest(Quest const *pQuest, Object *questGiver);
         void CompleteQuest(uint32 quest_id);
         void IncompleteQuest(uint32 quest_id);
-        void RewardQuest(Quest const *pQuest, uint32 reward, Object* questGiver, bool announce = true);
+        void RewardQuest(Quest const *quest, uint32 reward, Object* questGiver, bool announce = true);
 
         void FailQuest(uint32 questId);
         bool SatisfyQuestSkillOrClass(Quest const* qInfo, bool msg);
