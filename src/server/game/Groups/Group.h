@@ -342,6 +342,7 @@ class Group
         bool _addMember(const uint64 &guid, const char* name, bool isAssistant, uint8 group);
         bool _removeMember(const uint64 &guid);             // returns true if leader has changed
         void _setLeader(const uint64 &guid);
+        void _updateLeaderFlag(const bool remove = false);
 
         void _removeRolls(const uint64 &guid);
 

@@ -11626,7 +11626,6 @@ Item* Player::EquipItem(uint16 pos, Item *pItem, bool update)
                 SpellEntry const* spellProto = sSpellStore.LookupEntry(cooldownSpell);
 
                 // Swapping weapons resets the melee swing timer
-                
                 resetAttackTimer(BASE_ATTACK);
                 if (haveOffhandWeapon())
                     resetAttackTimer(OFF_ATTACK);
@@ -16875,6 +16874,8 @@ void Player::_LoadGroup(QueryResult_AutoPtr result)
             }
         }
     }
+
+    UpdateGroupLeaderFlag();
 }
 
 void Player::_LoadBoundInstances(QueryResult_AutoPtr result)
@@ -21320,6 +21321,18 @@ PartyResult Player::CanUninviteFromGroup() const
         return PARTY_RESULT_INVITE_RESTRICTED;
 
     return PARTY_RESULT_OK;
+}
+
+void Player::UpdateGroupLeaderFlag(const bool remove /*= false*/)
+{
+    const Group* group = GetGroup();
+    if (HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_GROUP_LEADER))
+    {
+        if (remove || !group || group->GetLeaderGUID() != GetGUID())
+            RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_GROUP_LEADER);
+    }
+    else if (!remove && group && group->GetLeaderGUID() == GetGUID())
+        SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_GROUP_LEADER);
 }
 
 void Player::SetBattleGroundRaid(Group* group, int8 subgroup)

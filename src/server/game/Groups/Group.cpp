@@ -116,7 +116,10 @@ bool Group::Create(const uint64 &guid, const char * name)
     if (!AddMember(guid, name))
         return false;
 
-    if (!isBGGroup()) CharacterDatabase.CommitTransaction();
+    if (!isBGGroup())
+        CharacterDatabase.CommitTransaction();
+
+    _updateLeaderFlag();
 
     return true;
 }
@@ -231,6 +234,8 @@ bool Group::AddLeaderInvite(Player* player)
 
     m_leaderGuid = player->GetGUID();
     m_leaderName = player->GetName();
+    _updateLeaderFlag();
+
     return true;
 }
 
@@ -437,6 +442,7 @@ void Group::Disband(bool hideDestroy)
         ResetInstances(INSTANCE_RESET_GROUP_DISBAND, NULL);
     }
 
+    _updateLeaderFlag(true);
     m_leaderGuid = 0;
     m_leaderName = "";
 }
@@ -1129,6 +1135,7 @@ bool Group::_removeMember(const uint64 &guid)
 
     if (m_leaderGuid == guid)                                // leader was removed
     {
+        _updateLeaderFlag(true);
         if (GetMembersCount() > 0)
             _setLeader(m_memberSlots.front().guid);
         return true;
@@ -1193,6 +1200,13 @@ void Group::_setLeader(const uint64 &guid)
 
     m_leaderGuid = slot->guid;
     m_leaderName = slot->name;
+    _updateLeaderFlag();
+}
+
+void Group::_updateLeaderFlag(const bool remove /*= false*/)
+{
+    if (Player* player = sObjectMgr->GetPlayer(m_leaderGuid))
+        player->UpdateGroupLeaderFlag(remove);
 }
 
 void Group::_removeRolls(const uint64 &guid)
