@@ -8149,13 +8149,17 @@ int32 Unit::SpellBaseDamageBonusTaken(SpellSchoolMask schoolMask)
 
 bool Unit::isSpellCrit(Unit *pVictim, SpellEntry const *spellProto, SpellSchoolMask schoolMask, WeaponAttackType attackType)
 {
-    // Mobs can't crit with spells
-    if (IS_CREATURE_GUID(GetGUID()))
+    // not critting spell
+    if (spellProto->AttributesEx2 & SPELL_ATTR_EX2_CANT_CRIT)
         return false;
 
-    // not critting spell
-    if ((spellProto->AttributesEx2 & SPELL_ATTR_EX2_CANT_CRIT))
-        return false;
+    // Creatures do not crit with their spells or abilities, unless it is owned by a player
+    if (GetTypeId() == TYPEID_UNIT)
+    {
+        Unit* owner = GetOwner();
+        if (!owner || owner->GetTypeId() != TYPEID_PLAYER)
+            return false;
+    }
 
     float crit_chance = 0.0f;
     switch (spellProto->DmgClass)
