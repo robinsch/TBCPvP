@@ -622,10 +622,20 @@ bool Unit::IsWithinMeleeRange(Unit const* obj) const
     float dz = GetPositionZ() - obj->GetPositionZ();
     float distsq = dx*dx + dy*dy + dz*dz;
 
-    float maxdist = GetCombatReach() + obj->GetCombatReach() + 4.0f / 3.0f;
+    float maxdist = GetMeleeRange(obj);
     maxdist = std::max(maxdist, NOMINAL_MELEE_RANGE);
 
+    if (obj && isMoving() && obj->isMoving() &&
+        obj->GetTypeId() == TYPEID_PLAYER)
+        maxdist += 5.0f / 3.0f;
+
     return distsq <= maxdist * maxdist;
+}
+
+float Unit::GetMeleeRange(Unit const* target) const
+{
+    float range = GetCombatReach() + target->GetCombatReach() + 4.0f / 3.0f;
+    return std::max(range, NOMINAL_MELEE_RANGE);
 }
 
 void Unit::GetRandomContactPoint(const Unit* obj, float &x, float &y, float &z, float distance2dMin, float distance2dMax) const

@@ -4892,70 +4892,17 @@ uint8 Spell::CheckRange(bool strict, bool initialCheck)
     if (!strict && m_casttime == 0)
         return 0;
 
-    Unit* target = m_targets.getUnitTarget();
     float minRange = 0.0f;
     float maxRange = 0.0f;
     float rangeMod = 0.0f;
-    if (strict && IsNextMeleeSwingSpell())
-        maxRange = 100.0f;
-    else if (SpellRangeEntry const* rangeEntry = sSpellRangeStore.LookupEntry(m_spellInfo->rangeIndex))
-    {
-        uint32 rangeType = GetSpellRangeType(rangeEntry);
-        if (rangeType & SPELL_RANGE_MELEE)
-        {
-            rangeMod = m_caster->GetCombatReach() + 4.0f / 3.0f;
-            if (target)
-                rangeMod += target->GetCombatReach();
-            else
-                rangeMod += m_caster->GetCombatReach();
-            
-            rangeMod = std::max(rangeMod, NOMINAL_MELEE_RANGE);
-        }
-        else
-        {
-            float meleeRange = 0.0f;
-            if (rangeType & SPELL_RANGE_RANGED)
-            {
-                meleeRange = m_caster->GetCombatReach() + 4.0f / 3.0f;
-                if (target)
-                    meleeRange += target->GetCombatReach();
-                else
-                    meleeRange += m_caster->GetCombatReach();
 
-                meleeRange = std::max(meleeRange, NOMINAL_MELEE_RANGE);
-            }
+    GetMinMaxRange(strict, minRange, maxRange);
 
-            minRange = GetSpellMinRange(m_spellInfo) + meleeRange;
-            maxRange = GetSpellMaxRange(m_spellInfo);
-
-            if (target)
-            {
-                rangeMod = m_caster->GetCombatReach();
-                if (target)
-                    rangeMod += target->GetCombatReach();
-
-                if (minRange > 0.0f && !(rangeType & SPELL_RANGE_RANGED))
-                    minRange += rangeMod;
-            }
-        }
-
-        if (target && m_caster->isMoving() && target->isMoving() &&
-            (rangeType & SPELL_RANGE_MELEE || target->GetTypeId() == TYPEID_PLAYER))
-            rangeMod += 5.0f / 3.0f;
-    }
-
-    if (m_spellInfo->Attributes & SPELL_ATTR_RANGED && m_caster->GetTypeId() == TYPEID_PLAYER)
-        if (Item* ranged = m_caster->ToPlayer()->GetWeaponForAttack(RANGED_ATTACK, true))
-            maxRange *= ranged->GetProto()->RangedModRange * 0.01f;
-
-    if (Player* modOwner = m_caster->GetSpellModOwner())
-        modOwner->ApplySpellMod(m_spellInfo->Id, SPELLMOD_RANGE, maxRange, this);
-
-    maxRange += rangeMod;
-
+    // get square values for sqr distance checks
     minRange *= minRange;
     maxRange *= maxRange;
 
+    Unit* target = m_targets.getUnitTarget();
     if (target && target != m_caster)
     {
         if (m_caster->GetExactDistSq(target) > maxRange)
@@ -4978,6 +4925,57 @@ uint8 Spell::CheckRange(bool strict, bool initialCheck)
     }
 
     return 0;
+}
+
+void Spell::GetMinMaxRange(bool strict, float& minRange, float& maxRange)
+{
+    Unit* target = m_targets.getUnitTarget();
+    float rangeMod = 0.0f;
+    if (strict && IsNextMeleeSwingSpell()) 
+    {
+        maxRange = 100.0f;
+        return;
+    }
+
+    if (SpellRangeEntry const* rangeEntry = sSpellRangeStore.LookupEntry(m_spellInfo->rangeIndex))
+    {
+        uint32 rangeType = GetSpellRangeType(rangeEntry);
+        if (rangeType & SPELL_RANGE_MELEE)
+        {
+            rangeMod = m_caster->GetMeleeRange(target ? target : m_caster); // when the target is not a unit, take the caster's combat reach as the target's combat reach.
+        }
+        else
+        {
+            float meleeRange = 0.0f;
+            if (rangeType & SPELL_RANGE_RANGED)
+                meleeRange = m_caster->GetMeleeRange(target ? target : m_caster); // when the target is not a unit, take the caster's combat reach as the target's combat reach.
+
+            minRange = GetSpellMinRange(m_spellInfo) + meleeRange;
+            maxRange = GetSpellMaxRange(m_spellInfo);
+
+            if (target || m_targets.getCorpseTargetGUID())
+            {
+                rangeMod = m_caster->GetCombatReach() + (target ? target->GetCombatReach() : m_caster->GetCombatReach());
+
+
+                if (minRange > 0.0f && !(rangeType & SPELL_RANGE_RANGED))
+                    minRange += rangeMod;
+            }
+        }
+
+        if (target && m_caster->isMoving() && target->isMoving() &&
+            (rangeType & SPELL_RANGE_MELEE || target->GetTypeId() == TYPEID_PLAYER))
+            rangeMod += 5.0f / 3.0f;
+    }
+
+    if (m_spellInfo->Attributes & SPELL_ATTR_RANGED && m_caster->GetTypeId() == TYPEID_PLAYER)
+        if (Item* ranged = m_caster->ToPlayer()->GetWeaponForAttack(RANGED_ATTACK, true))
+            maxRange *= ranged->GetProto()->RangedModRange * 0.01f;
+
+    if (Player* modOwner = m_caster->GetSpellModOwner())
+        modOwner->ApplySpellMod(m_spellInfo->Id, SPELLMOD_RANGE, maxRange, this);
+
+    maxRange += rangeMod;
 }
 
 uint8 Spell::CheckPower()

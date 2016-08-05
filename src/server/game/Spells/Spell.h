@@ -468,6 +468,7 @@ class Spell
     protected:
 
         void SendLoot(uint64 guid, LootType loottype);
+        void GetMinMaxRange(bool strict, float& minRange, float& maxRange);
 
         Unit* const m_caster;
 
