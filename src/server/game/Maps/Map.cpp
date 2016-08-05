@@ -2599,6 +2599,9 @@ void BattleGroundMap::InitVisibilityDistance()
 {
     //init visibility distance for BG/Arenas
     m_VisibleDistance = sWorld->GetMaxVisibleDistanceInBGArenas();
+    if (IsBattleArena())
+        m_VisibleDistance = 30.0f;
+
     m_VisibilityNotifyPeriod = World::GetVisibilityNotifyPeriodInBGArenas();
 }
 

@@ -452,6 +452,9 @@ void BattleGround::Update(time_t diff)
             //remove preparation
             if (isArena())
             {
+                if (BattleGroundMap* map = GetBgMap())
+                    map->SetVisibilityRange(World::GetMaxVisibleDistanceInBGArenas());
+
                 for (BattleGroundPlayerMap::const_iterator itr = GetPlayers().begin(); itr != GetPlayers().end(); ++itr)
                     if (Player *plr = sObjectMgr->GetPlayer(itr->first))
                         plr->RemoveAurasDueToSpell(SPELL_ARENA_PREPARATION);
