@@ -5699,23 +5699,6 @@ bool SpellEvent::Execute(uint64 e_time, uint32 p_time)
                     // another non-melee non-delayed spell is casted now, abort
                     m_Spell->cancel();
                 }
-                // Check if target of channeled spell still in range
-                // Channeled spells have increased range while channeling
-                else if (m_Spell->CheckRange(false, false, 1.5f))
-                    m_Spell->cancel();
-                
-                // for some spells with TARGET_UNIT_PET first target is m_caster and above code will not be called
-                // we need to check every spell effect for TARGET_UNIT_PET and detect if pet is isolated
-                for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
-                    if (spellInfo->EffectImplicitTargetA[i] == TARGET_UNIT_PET || spellInfo->EffectImplicitTargetB[i] == TARGET_UNIT_PET)
-                        if (Player* playerCaster = m_Spell->GetCaster()->ToPlayer())
-                        {
-                            if (Pet* pet = playerCaster->GetPet())
-                            {
-                                if (pet->hasUnitState(UNIT_STAT_ISOLATED))
-                                    m_Spell->cancel();
-                            }
-                        }
             }
             break;
         }
