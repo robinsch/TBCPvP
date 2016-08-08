@@ -2499,7 +2499,8 @@ void Spell::cast(bool skipCheck)
     // CAST SPELL
     SendSpellCooldown();
     //SendCastResult(castResult);
-    SendSpellGo();                                          // we must send smsg_spell_go packet before m_castItem delete in TakeCastItem()...
+    if (!IsChanneledSpell(m_spellInfo))
+        SendSpellGo();                                          // we must send smsg_spell_go packet before m_castItem delete in TakeCastItem()...
 
     // handle SPELL_AURA_ADD_TARGET_TRIGGER auras
     Unit::AuraList const& targetTriggers = m_caster->GetAurasByType(SPELL_AURA_ADD_TARGET_TRIGGER);
@@ -3408,6 +3409,14 @@ void Spell::SendChannelStart(uint32 duration)
     {
         for (std::list<TargetInfo>::iterator itr= m_UniqueTargetInfo.begin();itr != m_UniqueTargetInfo.end();++itr)
         {
+            if (IsChanneledSpell(m_spellInfo) && itr->missCondition != SPELL_MISS_NONE)
+            {
+                if (Unit* unitTarget = ObjectAccessor::GetUnit(*m_caster, itr->targetGUID))
+                    m_caster->SendSpellMiss(target->ToUnit(), m_spellInfo->Id, itr->missCondition);
+                SendCastResult(SPELL_FAILED_DONT_REPORT);
+                return;
+            }
+
             if ((itr->effectMask & (1<<0)) && itr->reflectResult == SPELL_MISS_NONE && itr->targetGUID != m_caster->GetGUID())
             {
                 target = ObjectAccessor::GetUnit(*m_caster, itr->targetGUID);
