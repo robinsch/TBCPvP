@@ -562,6 +562,7 @@ void Aura::Update(uint32 diff)
         {
             if (IsChanneledSpell(m_spellProto) && GetCasterGUID() != m_target->GetGUID())
             {
+                // Check Range
                 float maxRange = GetSpellMaxRange(m_spellProto->Id);
 
                 if (Player* modOwner = caster->GetSpellModOwner())
@@ -571,6 +572,22 @@ void Aura::Update(uint32 diff)
                 {
                     caster->InterruptSpell(CURRENT_CHANNELED_SPELL);
                     return;
+                }
+
+                // Check Isolated
+                if (IsPetTargetSpell(m_spellProto))
+                {
+                    if (Player* plr = caster->ToPlayer())
+                    {
+                        if (Pet* pet = plr->GetPet())
+                        {
+                            if (pet->hasUnitState(UNIT_STAT_ISOLATED))
+                            {
+                                caster->InterruptSpell(CURRENT_CHANNELED_SPELL);
+                                return;
+                            }
+                        }
+                    }
                 }
             }
 
