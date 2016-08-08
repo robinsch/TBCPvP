@@ -374,7 +374,7 @@ class Spell
         void _handle_finish_phase();
 
         uint8 CheckItems();
-        uint8 CheckRange(bool strict, bool initialCheck = true);
+        uint8 CheckRange(bool strict, bool checkFacing = true, float modifier = 0.0f);
         uint8 CheckPower();
         uint8 CheckCasterAuras() const;
 

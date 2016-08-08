@@ -4895,7 +4895,7 @@ bool Spell::CanAutoCast(Unit* target)
     return false;                                           //target invalid
 }
 
-uint8 Spell::CheckRange(bool strict, bool initialCheck)
+uint8 Spell::CheckRange(bool strict, bool checkFacing, float modifier)
 {
     // Don't check for instant cast spells
     if (!strict && m_casttime == 0)
@@ -4911,6 +4911,9 @@ uint8 Spell::CheckRange(bool strict, bool initialCheck)
     minRange *= minRange;
     maxRange *= maxRange;
 
+    if (modifier)
+        maxRange *= modifier;
+
     Unit* target = m_targets.getUnitTarget();
     if (target && target != m_caster)
     {
@@ -4920,7 +4923,7 @@ uint8 Spell::CheckRange(bool strict, bool initialCheck)
         if (minRange > 0.0f && m_caster->GetExactDistSq(target) < minRange)
             return  SPELL_FAILED_OUT_OF_RANGE;
 
-        if (m_caster->GetTypeId() == TYPEID_PLAYER &&
+        if (checkFacing && m_caster->GetTypeId() == TYPEID_PLAYER &&
             (m_spellInfo->FacingCasterFlags & SPELL_FACING_FLAG_INFRONT) && !m_caster->HasInArc(static_cast<float>(M_PI), target))
             return SPELL_FAILED_UNIT_NOT_INFRONT;
     }
@@ -5697,7 +5700,8 @@ bool SpellEvent::Execute(uint64 e_time, uint32 p_time)
                     m_Spell->cancel();
                 }
                 // Check if target of channeled spell still in range
-                else if (m_Spell->CheckRange(false, false))
+                // Channeled spells have increased range while channeling
+                else if (m_Spell->CheckRange(false, false, 1.5f))
                     m_Spell->cancel();
                 
                 // for some spells with TARGET_UNIT_PET first target is m_caster and above code will not be called
