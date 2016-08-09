@@ -563,7 +563,7 @@ void Aura::Update(uint32 diff)
             if (IsChanneledSpell(m_spellProto) && GetCasterGUID() != m_target->GetGUID())
             {
                 // Check Range
-                float maxRange = GetSpellMaxRange(m_spellProto->Id);
+                float maxRange = GetSpellMaxRange(m_spellProto->Id) * 1.5f;
 
                 if (Player* modOwner = caster->GetSpellModOwner())
                     modOwner->ApplySpellMod(GetId(), SPELLMOD_RANGE, maxRange, nullptr);
