@@ -3838,6 +3838,10 @@ uint8 Spell::CanCast(bool strict)
                 {
                     if (!(m_spellInfo->AttributesEx2 & SPELL_ATTR_EX2_IGNORE_LOS) && !m_caster->IsWithinLOSInMap(pet))
                         return SPELL_FAILED_LINE_OF_SIGHT;
+
+                    if (m_spellInfo->Id == 34026) // Kill Command
+                        if (!pet->CanFreeMove())
+                            return SPELL_FAILED_DONT_REPORT;
                 }
                 else
                 {
