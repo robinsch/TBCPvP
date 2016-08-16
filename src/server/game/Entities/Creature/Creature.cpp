@@ -190,8 +190,9 @@ void Creature::AddToWorld()
         Unit::AddToWorld();
         SearchFormation();
         AIM_Initialize();
-        //if (IsVehicle())
-            //GetVehicleKit()->Install();
+
+        if (isVendor())
+            LoadVendorItemCount();
     }
 }
 
@@ -2117,6 +2118,7 @@ uint32 Creature::GetVendorItemCurrentCount(VendorItem const* vItem)
         vCount->lastIncrementTime = ptime;
     }
 
+    SaveVendorItemCount();
     return vCount->count;
 }
 
@@ -2154,6 +2156,7 @@ uint32 Creature::UpdateVendorItemCurrentCount(VendorItem const* vItem, uint32 us
 
     vCount->count = vCount->count > used_count ? vCount->count-used_count : 0;
     vCount->lastIncrementTime = ptime;
+    SaveVendorItemCount();
     return vCount->count;
 }
 
@@ -2236,4 +2239,19 @@ void Creature::LockSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs)
         if ((idSchoolMask & GetSpellSchoolMask(spellInfo)) && GetCreatureSpellCooldownDelay(unSpellId) < unTimeMs)
             _AddCreatureSpellCooldown(unSpellId, curTime + unTimeMs / IN_MILLISECONDS);
     }
+}
+
+void Creature::LoadVendorItemCount()
+{
+    m_vendorItemCounts.clear();
+
+    if (VendorItemCounts const* items = sObjectMgr->GetCreatureVendorItemCounts(GetDBTableGUIDLow()))
+        for (auto itr = items->begin(); itr != items->end(); ++itr)
+            m_vendorItemCounts.push_back(VendorItemCount(itr->itemId, itr->count, itr->lastIncrementTime));
+}
+
+void Creature::SaveVendorItemCount()
+{
+    for (auto itr = m_vendorItemCounts.begin(); itr != m_vendorItemCounts.end(); ++itr)
+        WorldDatabase.PExecute("REPLACE INTO creature_vendor (guid, item, count, lastIncrementTime) VALUES (%u, %u, %u, '" UI64FMTD "')", GetGUIDLow(), itr->itemId, itr->count, itr->lastIncrementTime);
 }

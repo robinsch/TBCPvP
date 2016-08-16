@@ -1433,6 +1433,9 @@ void World::SetInitialWorldSettings()
     sLog->outString("Loading Vendors...");
     sObjectMgr->LoadVendors();                                   // must be after load CreatureTemplate and ItemTemplate
 
+    sLog->outString("Loading Creature Vendor Item Counts...");
+    sObjectMgr->LoadCreatureVendorItemCount();
+
     sLog->outString("Loading Trainers...");
     sObjectMgr->LoadTrainerSpell();                              // must be after load CreatureTemplate
 

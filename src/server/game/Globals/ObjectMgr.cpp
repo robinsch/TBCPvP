@@ -7599,3 +7599,30 @@ Quest const* GetQuestTemplateStore(uint32 entry)
 {
     return sObjectMgr->GetQuestTemplate(entry);
 }
+
+// 
+void ObjectMgr::LoadCreatureVendorItemCount()
+{
+    QueryResult_AutoPtr result = WorldDatabase.Query("SELECT guid, item, count, lastIncrementTime FROM creature_vendor");
+    if (!result)
+    {
+        sLog->outString();
+        sLog->outString(">> Loaded 0 creature vendor item count.");
+        return;
+    }
+
+    do
+    {
+        Field* fields = result->Fetch();
+
+        uint64 guid = fields[0].GetUInt32();
+        uint32 item = fields[1].GetUInt32();
+        uint32 count = fields[2].GetInt32();
+        time_t lastIncrementTime = fields[3].GetUInt64();
+
+        m_creatureVendorItemCounts[guid].push_back(VendorItemCount(item, count, lastIncrementTime));
+    } while (result->NextRow());
+
+    sLog->outString();
+    sLog->outString(">> Loaded %u Creature Vendors", m_creatureVendorItemCounts.size());
+}

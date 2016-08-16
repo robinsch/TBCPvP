@@ -368,8 +368,11 @@ struct VendorItemData
 
 struct VendorItemCount
 {
-    explicit VendorItemCount(uint32 _item, uint32 _count)
-        : itemId(_item), count(_count), lastIncrementTime(time(NULL)) {}
+    VendorItemCount(uint32 _item, uint32 _count)
+        : itemId(_item), count(_count), lastIncrementTime(time(nullptr)) {}
+
+    VendorItemCount(uint32 _item, uint32 _count, time_t _lastIncrementTime)
+        : itemId(_item), count(_count), lastIncrementTime(_lastIncrementTime) {}
 
     uint32 itemId;
     uint32 count;
@@ -522,6 +525,9 @@ class Creature : public Unit, public GridObject<Creature>
         void UpdateDamagePhysical(WeaponAttackType attType);
         uint32 GetCurrentEquipmentId() { return m_equipmentId; }
         float GetSpellDamageMod(int32 Rank);
+
+        void LoadVendorItemCount();
+        void SaveVendorItemCount();
 
         VendorItemData const* GetVendorItems() const;
         uint32 GetVendorItemCurrentCount(VendorItem const* vItem);

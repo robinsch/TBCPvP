@@ -340,6 +340,8 @@ typedef std::unordered_map<uint32/*(mapid, spawnMode) pair*/, CellObjectGuidsMap
 
 typedef std::unordered_map<uint64/*(instance, guid) pair*/, time_t> RespawnTimes;
 
+typedef std::unordered_map<uint32 /*guid*/, VendorItemCounts> CreatureVendorItemCounts;
+
 // Trinity string ranges
 #define MIN_TRINITY_STRING_ID           1                    // 'SkyFire_string'
 #define MAX_TRINITY_STRING_ID           2000000000
@@ -796,6 +798,7 @@ class ObjectMgr
         void LoadGossipMenuItems();
 
         void LoadVendors();
+        void LoadCreatureVendorItemCount();
         void LoadTrainerSpell();
 
         ItemFakeEntryContainer _itemFakeEntryStore;
@@ -1011,6 +1014,16 @@ class ObjectMgr
 
             return &iter->second;
         }
+
+        VendorItemCounts const* GetCreatureVendorItemCounts(uint32 guid) const
+        {
+            CreatureVendorItemCounts::const_iterator  iter = m_creatureVendorItemCounts.find(guid);
+            if (iter == m_creatureVendorItemCounts.end())
+                return nullptr;
+
+            return &iter->second;
+        }
+
         void AddVendorItem(uint32 entry, uint32 item, uint32 maxcount, uint32 incrtime, uint32 ExtendedCost, bool savetodb = true); // for event
         bool RemoveVendorItem(uint32 entry, uint32 item, bool savetodb = true); // for event
         bool IsVendorItemValid(uint32 vendor_entry, uint32 item, uint32 maxcount, uint32 ptime, uint32 ExtendedCost, Player* pl = NULL, std::set<uint32>* skip_vendors = NULL, uint32 ORnpcflag = 0) const;
@@ -1155,6 +1168,8 @@ class ObjectMgr
         CacheNpcTextIdMap m_mCacheNpcTextIdMap;
         CacheVendorItemMap m_mCacheVendorItemMap;
         CacheTrainerSpellMap m_mCacheTrainerSpellMap;
+
+        CreatureVendorItemCounts m_creatureVendorItemCounts;
 };
 
 #define sObjectMgr ACE_Singleton<ObjectMgr, ACE_Null_Mutex>::instance()
