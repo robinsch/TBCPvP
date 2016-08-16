@@ -2956,6 +2956,7 @@ void SpellMgr::LoadSpellCustomAttr()
         case 36554: // Shadowstep
         case 33206: // Pain Supression
         case 44416: // Pain Supression
+        case 14183: // Premeditation
             mSpellCustomAttr[i] = SPELL_ATTR_CU_DONT_BREAK_STEALTH;
             break;
         case 43730: // Stormchops effect
