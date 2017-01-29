@@ -2180,6 +2180,7 @@ class Player : public Unit, public GridObject<Player>
 
         bool IsVisibleInGridForPlayer(Player const* pl) const;
         bool IsVisibleGloballyFor(Player* pl) const;
+        bool IsVisible() const;
 
         void SendInitialVisiblePackets(Unit* target);
         void UpdateObjectVisibility(bool forced = true);

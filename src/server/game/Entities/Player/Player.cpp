@@ -19889,6 +19889,11 @@ bool Player::IsVisibleInGridForPlayer(Player const * pl) const
     return false;
 }
 
+bool Player::IsVisible() const
+{
+    return (m_serverSideVisibility.GetValue(SERVERSIDE_VISIBILITY_GM) > SEC_PLAYER) ? false : true;
+}
+
 bool Player::IsVisibleGloballyFor(Player* u) const
 {
     if (!u)

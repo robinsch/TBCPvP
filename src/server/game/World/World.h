@@ -74,7 +74,7 @@ enum WorldTimers
     WUPDATE_EVENTS,
     WUPDATE_CLEANDB,
     WUPDATE_AUTOBROADCAST,
-    WUPDATE_CACHE,
+    WUPDATE_WHO_LIST,
     WUPDATE_COUNT
 };
 
@@ -446,27 +446,6 @@ struct CliCommandHolder
     ~CliCommandHolder() { delete[] m_command; }
 };
 
-// Storage class for Who List info
-struct WhoListPlayerInfo
-{
-    TeamId teamId;
-    AccountTypes accountSecurity;
-    uint8 playerLevel;
-    Classes playerClass;
-    Races playerRace;
-    uint32 zoneId;
-    Gender playerGender;
-    std::wstring wPlayerName;
-    std::wstring wGuildName;
-    std::string playerName;
-    std::string guildName;
-    std::string zoneName;
-
-    WhoListPlayerInfo(TeamId teamId, AccountTypes accountSecurity, uint8 playerLevel, Classes playerClass, Races playerRace, uint32 zoneId,
-        Gender playerGender, std::wstring wPlayerName, std::wstring wGuildName, std::string playerName, std::string guildName, std::string zoneName) :
-    teamId(teamId), accountSecurity(accountSecurity), playerLevel(playerLevel), playerClass(playerClass), playerRace(playerRace), zoneId(zoneId), playerGender(playerGender), wPlayerName(wPlayerName), wGuildName(wGuildName), playerName(playerName), guildName(guildName), zoneName(zoneName) { }
-};
-
 // The World
 class World
 {
@@ -639,9 +618,6 @@ class World
 
         void UpdateAllowedSecurity();
 
-        void UpdateWhoListInfo();
-        std::vector<WhoListPlayerInfo> * GetWhoListInfo() { return &m_whoListPlayerInfo; }
-
         std::string VisualCharName;
 
         LocaleConstant GetAvailableDbcLocale(LocaleConstant locale) const { if (m_availableDbcLocaleMask & (1 << locale)) return locale; else return m_defaultDbcLocale; }
@@ -692,7 +668,6 @@ class World
         uint32 m_maxQueuedSessionCount;
         uint32 m_PlayerCount;
         uint32 m_MaxPlayerCount;
-        std::vector<WhoListPlayerInfo> m_whoListPlayerInfo;
 
         std::string m_newCharString;
 
